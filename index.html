@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#000000"/>
+<title>Collection of the 2nd</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#000;font-family:-apple-system,'SF Pro Display',BlinkMacSystemFont,sans-serif;color:#fff;height:100vh;overflow:hidden}
+input,select,textarea{color-scheme:dark;font-family:inherit}
+input::placeholder,textarea::placeholder{color:#48484a}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:#1c1c1e}
+::-webkit-scrollbar-thumb{background:#3a3a3c;border-radius:3px}
+@keyframes fadeIn{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}
+.sheet{animation:fadeIn 0.2s ease}
+select{background:#2c2c2e;border:none;color:#fff;border-radius:12px;padding:13px 16px;font-size:16px;outline:none;appearance:none;-webkit-appearance:none;width:100%}
+input[type=text],input[type=number],input[type=date],textarea{background:#2c2c2e;border:none;color:#fff;border-radius:12px;padding:13px 16px;font-size:16px;outline:none;width:100%}
+textarea{resize:vertical;min-height:80px}
+button{font-family:inherit;cursor:pointer}
+.nav-btn{width:100%;padding:12px 15px;border-radius:13px;border:none;background:transparent;color:#8e8e93;font-weight:500;font-size:15px;display:flex;align-items:center;gap:9px;text-align:left;border-left:3px solid transparent;transition:all 0.15s}
+.nav-btn.active{background:#ff9f0a18;color:#ff9f0a;font-weight:700;border-left-color:#ff9f0a}
+.card{background:#1c1c1e;border-radius:16px;margin-bottom:9px;display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;border:1px solid #2c2c2e}
+.section-card{background:#1c1c1e;border-radius:16px;border:1px solid #2c2c2e;overflow:hidden;margin-bottom:12px}
+.section-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #2c2c2e}
+.pill{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:3px 10px;border-radius:20px}
+.toggle{width:44px;height:26px;border-radius:13px;border:none;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.toggle-knob{position:absolute;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useRef, useEffect, useCallback} = React;
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+const CALIBERS=[".22 LR",".380 ACP","9mm",".40 S&W",".45 ACP",".357 Mag",".38 Spl","10mm",".44 Mag","5.56 NATO",".223 Rem",".308 Win","7.62x39","6.5 Creedmoor","12 Gauge","20 Gauge"];
+const GUN_TYPES=["Semi-Auto Pistol","Revolver","Semi-Auto Rifle","Bolt Action","Lever Action","Pump Shotgun","Semi-Auto Shotgun","Single Shot","Break Action"];
+const ACTIONS=["Single Action (SA)","Double Action (DA)","DA/SA","Striker Fired","Lever Action","Bolt Action","Pump Action","Break Action"];
+const MFG_GUNS=["Glock","Smith & Wesson","Sig Sauer","Ruger","Springfield Armory","Colt","Beretta","HK","Walther","CZ","Kimber","Taurus","Mossberg","Remington","Winchester","Henry","Marlin"];
+const MFG_AMMO=["Federal","Winchester","Remington","Hornady","Speer","CCI","PMC","Fiocchi","Magtech","American Eagle"];
+const MFG_ACC=["Trijicon","Holosun","Vortex","Leupold","Nightforce","Streamlight","SureFire","Olight","Safariland","Blackhawk","Magpul","Geissele","LaRue","Silencerco","Dead Air","Arisaka","Cloud Defensive"];
+const AMMO_TYPES=["FMJ","Hollow Point","Soft Point","Frangible","Buckshot","Slug","Birdshot","Match","Subsonic"];
+const ACC_CATS=["Optic","Red Dot","LPVO","Scope","Light","Laser","Suppressor","Foregrip","Stock","Trigger","Barrel","Compensator","Muzzle Brake","Holster","Magazine","Sling","Rail","Bipod","Other"];
+const HUNT_SPECIES=["Whitetail Deer","Mule Deer","Elk","Hog","Turkey","Duck","Goose","Dove","Squirrel","Rabbit","Coyote","Bear","Other"];
+const WEATHER_CONDITIONS=["Clear","Partly Cloudy","Overcast","Light Rain","Heavy Rain","Foggy","Windy","Snow"];
+const DRILL_TYPES=["Draw to First Shot","Failure Drill","Mozambique","Bill Drill","El Presidente","Double Tap","Cadence Drill","Transition Drill","Malfunction Clearance","Custom"];
+const CAT_COLORS={"Optic":"#0a84ff","Red Dot":"#30d158","LPVO":"#5e5ce6","Scope":"#64d2ff","Light":"#ffd60a","Laser":"#ff375f","Suppressor":"#636366","Foregrip":"#ac8e68","Stock":"#8e8e93","Trigger":"#ff9f0a","Barrel":"#ff6b0a","Compensator":"#30d158","Muzzle Brake":"#5ac8f5","Holster":"#bf5af2","Magazine":"#ff9f0a","Sling":"#64d2ff","Rail":"#8e8e93","Bipod":"#ac8e68","Other":"#636366"};
+
+const DEFAULT_MODULES={inventory:true,range:true,pbz:true,dope:true,maintenance:true,drills:true,zeros:true,games:true,hunting:true,gear:true,reloading:true};
+const DEFAULT_SETTINGS={units:"imperial",modules:DEFAULT_MODULES};
+
+const SHOOTING_GAMES=[
+  {id:"poker",name:"Playing Card Poker",players:"2-6",description:"Each shooter fires at a playing card target spread to collect a five-card poker hand. The player with the best poker hand after a set number of rounds wins.",rules:["Set up a playing card spread target at your chosen distance","Each shooter fires one shot per turn to 'collect' that card","After each shooter has fired enough rounds to build a hand (5 cards), compare hands","Standard poker hand rankings apply — Royal Flush beats everything","In case of a tie, highest card in the hand wins","Variation: Set a distance penalty — cards at 25yd are worth face value, 50yd are wild"],scoring:"poker"},
+  {id:"pingpong",name:"Ping Pong",players:"2",description:"A pressure game where shooters must beat each other's score to keep the pressure moving. First to reach the target score wins.",rules:["Shooter 1 fires one shot at a scored target (e.g. USPSA or NRA B8)","Note the score — this is now the 'score to beat'","Shooter 2 must fire a shot that scores HIGHER than Shooter 1's shot","If Shooter 2 beats it, pressure moves back to Shooter 1 with the new high score","If Shooter 2 fails to beat it, Shooter 1 gets a point and fires again to set a new score","First player to reach 5 (or 10) points wins"],scoring:"points",maxScore:10},
+  {id:"stringoftens",name:"String of Tens",icon:"🎯",players:"1+",description:"A focus and consistency game. Hit as many 10-rings in a row as possible. Any shot outside the 10 resets your streak.",rules:["Use a standard NRA B8 or similar scored target","Shooter fires at their own pace — no time limit","Every shot that hits the 10-ring extends the streak","Any shot scoring 9 or lower resets the streak to zero","Shooter can choose to STOP at any time to lock in their current streak","Highest locked-in streak number is your score","Compete for highest streak across all shooters"],scoring:"streak"},
+  {id:"lettergame",name:"The Letter Game",icon:"🔤",players:"2+",description:"Tests quick target acquisition and reaction time. A caller shouts a letter, shooters race to engage the correct target.",rules:["Set up multiple lettered targets (A through whatever) at varying distances","One player acts as the Caller and does not shoot","Caller shouts a random letter — all shooters race to engage that target with one shot","First accurate hit on the correct target wins the round","10 rounds per game — most round wins takes the match","Penalty: hitting wrong target costs you 2 points","Variation: Caller can also shout a number (1-10) for numbered targets"],scoring:"rounds",maxScore:10},
+  {id:"balloon",name:"Balloon Pop / Knockdown",icon:"🎈",players:"1+",description:"Race to clear reactive targets as fast as possible. Great for practicing target transitions.",rules:["Set up reactive targets (balloons, cans, steel poppers) at varying distances","Each shooter gets the same number and layout of targets","On signal, shooter engages all targets as fast as possible","Time stops when all targets are neutralized","Shooter with the fastest time to clear all targets wins","Miss penalty: +2 seconds added to your time for each missed target","Variation: Shooter calls their own time and replaces missed targets with penalty targets"],scoring:"time"},
+];
+
+const cc=cat=>CAT_COLORS[cat]||"#636366";
+const fmtP=n=>`$${parseFloat(n).toFixed(2)}`;
+const fmtK=n=>n>=1000?`$${(n/1000).toFixed(1)}k`:`$${n.toFixed(0)}`;
+const gLabel=g=>g?`${g.manufacturer} ${g.model||""}`.trim():"Unassigned";
+const nowDate=()=>new Date().toISOString().slice(0,10);
+const uid=()=>Date.now()+Math.floor(Math.random()*9999);
+const yds2m=y=>(y*0.9144).toFixed(1);
+const m2yds=m=>(m/0.9144).toFixed(1);
+const fps2mps=f=>(f*0.3048).toFixed(1);
+const mps2fps=m=>(m/0.3048).toFixed(1);
+const gr2g=g=>(g*0.0647989).toFixed(2);
+const g2gr=g=>(g/0.0647989).toFixed(1);
+
+// ── Sample Data ───────────────────────────────────────────────────────────────
+const SAMPLE_GUNS=[
+  {id:1,type:"firearm",manufacturer:"Glock",model:"G19 Gen5",gunType:"Semi-Auto Pistol",action:"Striker Fired",caliber:"9mm",serialNumber:"BKPX123",finish:"Black",notes:"Carry gun, night sights",purchaseDate:"2024-01-15",purchasePrice:"649.99",images:[],dateAdded:"2024-01-15",roundCount:0},
+  {id:2,type:"firearm",manufacturer:"Smith & Wesson",model:"Model 686",gunType:"Revolver",action:"Double Action",caliber:".357 Mag",serialNumber:"DAK5521",finish:"Stainless",notes:"6-inch barrel, range gun",purchaseDate:"2023-11-20",purchasePrice:"849.00",images:[],dateAdded:"2023-11-20",roundCount:0},
+  {id:3,type:"firearm",manufacturer:"Ruger",model:"Marlin 1894",gunType:"Lever Action",action:"Lever Action",caliber:".357 Mag",serialNumber:"MM44219",finish:"Blued",notes:"Pairs with the 686",purchaseDate:"2024-05-10",purchasePrice:"1099.00",images:[],dateAdded:"2024-05-10",roundCount:0},
+];
+const SAMPLE_AMMO=[
+  {id:1,type:"ammo",manufacturer:"Federal",caliber:"9mm",grains:"124",ammoType:"Hollow Point",quantity:500,notes:"HST defensive",purchaseDate:"2024-02-10",purchasePrice:"34.99",images:[],dateAdded:"2024-02-10"},
+  {id:2,type:"ammo",manufacturer:"Hornady",caliber:".357 Mag",grains:"158",ammoType:"Hollow Point",quantity:250,notes:"Critical Defense",purchaseDate:"2024-04-01",purchasePrice:"44.99",images:[],dateAdded:"2024-04-01"},
+  {id:3,type:"ammo",manufacturer:"PMC",caliber:".357 Mag",grains:"158",ammoType:"FMJ",quantity:1000,notes:"Range training",purchaseDate:"2024-04-15",purchasePrice:"89.00",images:[],dateAdded:"2024-04-15"},
+];
+const SAMPLE_ACC=[
+  {id:1,type:"accessory",gunId:1,category:"Optic",manufacturer:"Trijicon",model:"RMR Type 2",serialNumber:"RMR12345",purchaseDate:"2024-02-01",purchasePrice:"699.00",notes:"3.25 MOA dot",images:[],dateAdded:"2024-02-01"},
+  {id:2,type:"accessory",gunId:1,category:"Light",manufacturer:"Streamlight",model:"TLR-7A",serialNumber:"",purchaseDate:"2024-02-15",purchasePrice:"119.00",notes:"500 lumens",images:[],dateAdded:"2024-02-15"},
+];
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+function Ico({vb,w,h,children,fill,stroke,sw}){return <svg width={w||20} height={h||20} viewBox={vb||"0 0 24 24"} fill={fill||"none"} stroke={stroke||"currentColor"} strokeWidth={sw||"2"} strokeLinecap="round" strokeLinejoin="round">{children}</svg>;}
+function ISearch(){return <Ico><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></Ico>;}
+function IPlus(){return <Ico w="20" h="20"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Ico>;}
+function IChev(){return <Ico w="16" h="16"><polyline points="9 18 15 12 9 6"/></Ico>;}
+function IChevDown(){return <Ico w="16" h="16"><polyline points="6 9 12 15 18 9"/></Ico>;}
+function ITrash(){return <Ico w="17" h="17"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></Ico>;}
+function ICheck(){return <Ico w="13" h="13" sw="2.5"><polyline points="20 6 9 17 4 12"/></Ico>;}
+function IX(){return <Ico w="11" h="11" sw="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Ico>;}
+function ISettings(){return <Ico><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></Ico>;}
+function IGun(){return <svg width="22" height="22" viewBox="0 0 64 64" fill="currentColor"><path d="M58 20H44v-4a2 2 0 0 0-2-2H22a2 2 0 0 0-2 2v4H8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2v10a2 2 0 0 0 2 2h4v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2h16a6 6 0 0 0 6-6V26a6 6 0 0 0-6-6z"/></svg>;}
+function IBullet(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="7" rx="4" ry="6"/><rect x="8" y="12" width="8" height="8" rx="1"/></svg>;}
+function IWrench(){return <Ico><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></Ico>;}
+function ITarget(){return <Ico><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></Ico>;}
+function ICamera(){return <Ico w="24" h="24" sw="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></Ico>;}
+function ILink(){return <Ico w="15" h="15"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></Ico>;}
+function IUnlink(){return <Ico w="15" h="15"><path d="M18.84 12.25l1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/></Ico>;}
+function IExport(){return <Ico><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></Ico>;}
+
+// ── Toggle ────────────────────────────────────────────────────────────────────
+function Toggle({on,onToggle}){
+  return (
+    <button className="toggle" onClick={onToggle} style={{background:on?"#ff9f0a":"#3a3a3c"}}>
+      <div className="toggle-knob" style={{left:on?"21px":"3px"}}/>
+    </button>
+  );
+}
+
+// ── UI Primitives ─────────────────────────────────────────────────────────────
+function Overlay({onClose,wide,children}){
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.72)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div className="sheet" onClick={e=>e.stopPropagation()} style={{background:"#1c1c1e",borderRadius:22,width:wide?"900px":"650px",maxWidth:"97vw",maxHeight:"92vh",overflowY:"auto",display:"flex",flexDirection:"column"}}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SheetHeader({title,onBack,onSave,saveLabel,onDelete,backLabel}){
+  return (
+    <div style={{display:"flex",alignItems:"center",padding:"24px 28px 18px",gap:14,borderBottom:"1px solid #2c2c2e",flexShrink:0}}>
+      <button onClick={onBack} style={{background:"none",border:"none",color:"#ff9f0a",fontSize:16,fontWeight:600,whiteSpace:"nowrap"}}>{backLabel||"‹ Back"}</button>
+      <div style={{flex:1,textAlign:"center",color:"#fff",fontWeight:700,fontSize:18}}>{title}</div>
+      {onDelete&&<button onClick={onDelete} style={{background:"#3a1a1a",border:"none",borderRadius:10,padding:"7px 13px",color:"#ff453a",fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:5}}><ITrash/> Delete</button>}
+      {onSave&&<button onClick={onSave} style={{background:"#ff9f0a",border:"none",borderRadius:10,padding:"8px 18px",color:"#000",fontWeight:700,fontSize:15}}>{saveLabel||"Save"}</button>}
+    </div>
+  );
+}
+
+function Fld({label,span,half,children}){
+  return (
+    <div style={{gridColumn:span?"1/-1":half?"auto":"auto",marginBottom:14}}>
+      <div style={{color:"#8e8e93",fontSize:12,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function TI({value,onChange,placeholder}){return <input type="text" value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder||""}/>;}
+function NI({value,onChange,placeholder}){return <input type="number" value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder||""}/>;}
+function DI({value,onChange}){return <input type="date" value={value||""} onChange={e=>onChange(e.target.value)} style={{color:value?"#fff":"#636366"}}/>;}
+function TA({value,onChange,placeholder}){return <textarea value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder||""}/>;}
+function PI({value,onChange}){
+  return (
+    <div style={{position:"relative"}}>
+      <span style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:"#8e8e93",pointerEvents:"none"}}>$</span>
+      <input type="number" value={value||""} onChange={e=>onChange(e.target.value)} placeholder="0.00" min="0" step="0.01" style={{paddingLeft:26}}/>
+    </div>
+  );
+}
+
+const ADD_OPT="__ADD__";
+function ASelect({value,onChange,options,onAdd}){
+  const [adding,setAdding]=useState(false);
+  const [draft,setDraft]=useState("");
+  const ref=useRef();
+  function handle(e){if(e.target.value===ADD_OPT){setAdding(true);setTimeout(()=>ref.current&&ref.current.focus(),50);}else onChange(e.target.value);}
+  function commit(){const t=draft.trim();if(t){onAdd&&onAdd(t);onChange(t);}setDraft("");setAdding(false);}
+  if(adding)return(
+    <div style={{display:"flex",gap:8}}>
+      <input ref={ref} type="text" value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape"){setDraft("");setAdding(false);}}} placeholder="Type + Enter…" style={{flex:1,border:"1px solid #ff9f0a"}}/>
+      <button onClick={commit} style={{background:"#ff9f0a",border:"none",borderRadius:10,padding:"11px 14px",color:"#000",fontWeight:700}}>Add</button>
+      <button onClick={()=>{setDraft("");setAdding(false);}} style={{background:"#2c2c2e",border:"none",borderRadius:10,padding:"11px 12px",color:"#8e8e93"}}>✕</button>
+    </div>
+  );
+  return(
+    <select value={value||""} onChange={handle} style={{color:value?"#fff":"#636366"}}>
+      <option value="" disabled>Select…</option>
+      {options.map(o=><option key={o} value={o}>{o}</option>)}
+      <option value={ADD_OPT}>＋ Add custom…</option>
+    </select>
+  );
+}
+
+function ImgPicker({images,onChange}){
+  const imgs=images||[];
+  const ref=useRef();
+  function add(e){
+    const files=Array.from(e.target.files);
+    Promise.all(files.map(f=>new Promise(r=>{const rd=new FileReader();rd.onload=ev=>r(ev.target.result);rd.readAsDataURL(f);}))).then(ni=>onChange([...imgs,...ni]));
+    e.target.value="";
+  }
+  function rm(i){onChange(imgs.filter((_,j)=>j!==i));}
+  return(
+    <div>
+      {imgs.length>0&&(
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
+          {imgs.map((src,i)=>(
+            <div key={i} style={{position:"relative",width:90,height:90,borderRadius:10,overflow:"hidden"}}>
+              <img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              <button onClick={()=>rm(i)} style={{position:"absolute",top:3,right:3,width:20,height:20,borderRadius:"50%",background:"rgba(0,0,0,0.75)",border:"none",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><IX/></button>
+            </div>
+          ))}
+          <div onClick={()=>ref.current.click()} style={{width:90,height:90,borderRadius:10,background:"#2c2c2e",border:"2px dashed #48484a",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:24,color:"#636366"}}>+</div>
+        </div>
+      )}
+      {!imgs.length&&(
+        <div onClick={()=>ref.current.click()} style={{height:120,borderRadius:14,background:"#2c2c2e",border:"2px dashed #48484a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:8}}>
+          <div style={{color:"#636366"}}><ICamera/></div>
+          <span style={{color:"#636366",fontSize:14}}>Add Photos</span>
+        </div>
+      )}
+      <input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}} onChange={add}/>
+    </div>
+  );
+}
+
+function PV({images,placeholder}){
+  const [pi,setPi]=useState(0);
+  const imgs=images||[];
+  if(!imgs.length)return <div style={{height:160,borderRadius:14,background:"#2c2c2e",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,color:"#3a3a3c"}}>{placeholder}</div>;
+  return(
+    <div style={{position:"relative",borderRadius:14,overflow:"hidden",marginBottom:16}}>
+      <img src={imgs[pi]} alt="" style={{width:"100%",height:240,objectFit:"cover"}}/>
+      {imgs.length>1&&(
+        <>
+          <div style={{position:"absolute",bottom:10,left:"50%",transform:"translateX(-50%)",display:"flex",gap:5}}>
+            {imgs.map((_,i)=><div key={i} onClick={()=>setPi(i)} style={{width:i===pi?18:6,height:6,borderRadius:3,background:i===pi?"#fff":"rgba(255,255,255,0.4)",cursor:"pointer"}}/>)}
+          </div>
+          <button onClick={()=>setPi(i=>(i-1+imgs.length)%imgs.length)} style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.55)",border:"none",color:"#fff",borderRadius:"50%",width:32,height:32,fontSize:20,display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+          <button onClick={()=>setPi(i=>(i+1)%imgs.length)} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.55)",border:"none",color:"#fff",borderRadius:"50%",width:32,height:32,fontSize:20,display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DR({label,value,last,accent,color}){
+  return(
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:last?"none":"1px solid #3a3a3c"}}>
+      <span style={{color:"#8e8e93",fontSize:14}}>{label}</span>
+      <span style={{color:color||(accent?"#ff9f0a":"#fff"),fontSize:14,fontWeight:accent||color?700:500}}>{value}</span>
+    </div>
+  );
+}
+
+function AccBadge({category}){
+  const col=cc(category);
+  return <span className="pill" style={{background:`${col}22`,color:col}}>{category}</span>;
+}
+
+function SectionBlock({title,count,color,onAdd,addLabel,defaultOpen,children}){
+  const [open,setOpen]=useState(defaultOpen!==false);
+  return(
+    <div className="section-card">
+      <div className="section-header" style={{cursor:"pointer"}} onClick={()=>setOpen(v=>!v)}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{color:"#fff",fontWeight:700,fontSize:15}}>{title}</span>
+          {count!==undefined&&<span style={{background:"#2c2c2e",borderRadius:8,padding:"2px 8px",fontSize:12,fontWeight:700,color:color||"#636366"}}>{count}</span>}
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {onAdd&&open&&(
+            <button onClick={e=>{e.stopPropagation();onAdd();}} style={{background:`${color||"#ff9f0a"}22`,border:`1px solid ${color||"#ff9f0a"}44`,borderRadius:10,padding:"6px 13px",color:color||"#ff9f0a",fontSize:13,fontWeight:600}}>
+              + {addLabel||"Add"}
+            </button>
+          )}
+          <div style={{color:"#48484a",transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}><IChevDown/></div>
+        </div>
+      </div>
+      {open&&<div style={{padding:"14px 16px"}}>{children}</div>}
+    </div>
+  );
+}
+
+// ── Forms ─────────────────────────────────────────────────────────────────────
+function FWrap({title,onSave,onClose,children}){
+  return(
+    <Overlay onClose={onClose}>
+      <SheetHeader title={title} onBack={onClose} backLabel="Cancel" onSave={onSave}/>
+      <div style={{padding:"20px 28px 28px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 24px",overflowY:"auto"}}>
+        {children}
+      </div>
+    </Overlay>
+  );
+}
+
+function GunForm({initial,onSave,onClose,lists}){
+  const [f,setF]=useState(initial||{gunType:"",action:"",manufacturer:"",model:"",serialNumber:"",caliber:"",finish:"",notes:"",purchaseDate:"",purchasePrice:"",images:[],roundCount:0});
+  const s=k=>v=>setF(x=>({...x,[k]:v}));
+  return(
+    <FWrap title={initial?"Edit Firearm":"Add Firearm"} onSave={()=>onSave(f)} onClose={onClose}>
+      <Fld label="Photos" span><ImgPicker images={f.images||[]} onChange={s("images")}/></Fld>
+      <Fld label="Gun Type"><ASelect value={f.gunType} onChange={s("gunType")} options={lists.gunTypes} onAdd={lists.addGunType}/></Fld>
+      <Fld label="Action"><ASelect value={f.action} onChange={s("action")} options={lists.actions} onAdd={lists.addAction}/></Fld>
+      <Fld label="Manufacturer"><ASelect value={f.manufacturer} onChange={s("manufacturer")} options={lists.mfgGuns} onAdd={lists.addMfgGun}/></Fld>
+      <Fld label="Model"><TI value={f.model} onChange={s("model")} placeholder="e.g. G19 Gen5"/></Fld>
+      <Fld label="Serial #"><TI value={f.serialNumber} onChange={s("serialNumber")} placeholder="e.g. ABC123"/></Fld>
+      <Fld label="Caliber"><ASelect value={f.caliber} onChange={s("caliber")} options={lists.calibers} onAdd={lists.addCaliber}/></Fld>
+      <Fld label="Finish"><TI value={f.finish} onChange={s("finish")} placeholder="e.g. Black, FDE"/></Fld>
+      <Fld label="Purchase Date"><DI value={f.purchaseDate} onChange={s("purchaseDate")}/></Fld>
+      <Fld label="Purchase Price"><PI value={f.purchasePrice} onChange={s("purchasePrice")}/></Fld>
+      <Fld label="Notes" span><TA value={f.notes} onChange={s("notes")} placeholder="Optional notes…"/></Fld>
+    </FWrap>
+  );
+}
+
+function AmmoForm({initial,onSave,onClose,lists}){
+  const [f,setF]=useState(initial||{manufacturer:"",caliber:"",grains:"",ammoType:"",quantity:"",notes:"",purchaseDate:"",purchasePrice:"",images:[]});
+  const s=k=>v=>setF(x=>({...x,[k]:v}));
+  return(
+    <FWrap title={initial?"Edit Ammo":"Add Ammo"} onSave={()=>onSave(f)} onClose={onClose}>
+      <Fld label="Photos" span><ImgPicker images={f.images||[]} onChange={s("images")}/></Fld>
+      <Fld label="Manufacturer"><ASelect value={f.manufacturer} onChange={s("manufacturer")} options={lists.mfgAmmo} onAdd={lists.addMfgAmmo}/></Fld>
+      <Fld label="Caliber"><ASelect value={f.caliber} onChange={s("caliber")} options={lists.calibers} onAdd={lists.addCaliber}/></Fld>
+      <Fld label="Grain Weight"><TI value={f.grains} onChange={s("grains")} placeholder="e.g. 124"/></Fld>
+      <Fld label="Type"><ASelect value={f.ammoType} onChange={s("ammoType")} options={lists.ammoTypes} onAdd={lists.addAmmoType}/></Fld>
+      <Fld label="Quantity (rounds)"><NI value={f.quantity} onChange={s("quantity")} placeholder="500"/></Fld>
+      <Fld label="Purchase Date"><DI value={f.purchaseDate} onChange={s("purchaseDate")}/></Fld>
+      <Fld label="Purchase Price"><PI value={f.purchasePrice} onChange={s("purchasePrice")}/></Fld>
+      <Fld label="Notes" span><TA value={f.notes} onChange={s("notes")} placeholder="Optional notes…"/></Fld>
+    </FWrap>
+  );
+}
+
+function AccForm({initial,onSave,onClose,guns,lists}){
+  const [f,setF]=useState(initial||{category:"",manufacturer:"",model:"",serialNumber:"",gunId:null,notes:"",purchaseDate:"",purchasePrice:"",images:[]});
+  const s=k=>v=>setF(x=>({...x,[k]:v}));
+  return(
+    <FWrap title={initial?"Edit Accessory":"Add Accessory"} onSave={()=>onSave(f)} onClose={onClose}>
+      <Fld label="Photos" span><ImgPicker images={f.images||[]} onChange={s("images")}/></Fld>
+      <Fld label="Category"><ASelect value={f.category} onChange={s("category")} options={lists.accCats} onAdd={lists.addAccCat}/></Fld>
+      <Fld label="Manufacturer"><ASelect value={f.manufacturer} onChange={s("manufacturer")} options={lists.mfgAcc} onAdd={lists.addMfgAcc}/></Fld>
+      <Fld label="Model"><TI value={f.model} onChange={s("model")} placeholder="e.g. RMR Type 2"/></Fld>
+      <Fld label="Serial #"><TI value={f.serialNumber} onChange={s("serialNumber")} placeholder="Optional"/></Fld>
+      <Fld label="Assigned Gun" span>
+        <select value={f.gunId||""} onChange={e=>s("gunId")(e.target.value===""?null:parseInt(e.target.value))} style={{color:f.gunId?"#fff":"#636366"}}>
+          <option value="">Unassigned / General</option>
+          {guns.map(g=><option key={g.id} value={g.id}>{g.manufacturer} {g.model||""} ({g.caliber})</option>)}
+        </select>
+      </Fld>
+      <Fld label="Purchase Date"><DI value={f.purchaseDate} onChange={s("purchaseDate")}/></Fld>
+      <Fld label="Purchase Price"><PI value={f.purchasePrice} onChange={s("purchasePrice")}/></Fld>
+      <Fld label="Notes" span><TA value={f.notes} onChange={s("notes")} placeholder="Optional notes…"/></Fld>
+    </FWrap>
+  );
+}
+
+function RangeSessionForm({initial,onSave,onClose,guns,ammo}){
+  const [f,setF]=useState(initial||{date:"",gunId:"",ammoId:"",roundsFired:"",distance:"",location:"",weatherTemp:"",weatherWind:"",weatherCondition:"",notes:"",drills:[]});
+  const s=k=>v=>setF(x=>({...x,[k]:v}));
+  return(
+    <FWrap title={initial?"Edit Session":"Log Range Session"} onSave={()=>onSave(f)} onClose={onClose}>
+      <Fld label="Date"><DI value={f.date} onChange={s("date")}/></Fld>
+      <Fld label="Location"><TI value={f.location} onChange={s("location")} placeholder="e.g. Buck Creek Range"/></Fld>
+      <Fld label="Firearm">
+        <select value={f.gunId||""} onChange={e=>s("gunId")(e.target.value)} style={{color:f.gunId?"#fff":"#636366"}}>
+          <option value="">Select gun…</option>
+          {guns.map(g=><option key={g.id} value={g.id}>{g.manufacturer} {g.model||""}</option>)}
+        </select>
+      </Fld>
+      <Fld label="Ammo Used">
+        <select value={f.ammoId||""} onChange={e=>s("ammoId")(e.target.value)} style={{color:f.ammoId?"#fff":"#636366"}}>
+          <option value="">Select ammo…</option>
+          {ammo.map(a=><option key={a.id} value={a.id}>{a.manufacturer} {a.caliber} {a.grains}gr {a.ammoType}</option>)}
+        </select>
+      </Fld>
+      <Fld label="Rounds Fired"><NI value={f.roundsFired} onChange={s("roundsFired")} placeholder="50"/></Fld>
+      <Fld label="Distance (yds)"><NI value={f.distance} onChange={s("distance")} placeholder="25"/></Fld>
+      <Fld label="Temp (°F)"><NI value={f.weatherTemp} onChange={s("weatherTemp")} placeholder="72"/></Fld>
+      <Fld label="Wind (mph)"><NI value={f.weatherWind} onChange={s("weatherWind")} placeholder="5"/></Fld>
+      <Fld label="Conditions">
+        <select value={f.weatherCondition||""} onChange={e=>s("weatherCondition")(e.target.value)} style={{color:f.weatherCondition?"#fff":"#636366"}}>
+          <option value="">Select…</option>
+          {WEATHER_CONDITIONS.map(c=><option key={c} value={c}>{c}</option>)}
+        </select>
+      </Fld>
+      <Fld label="Notes" span><TA value={f.notes} onChange={s("notes")} placeholder="What did you work on? Observations?"/></Fld>
+    </FWrap>
+  );
+}
+
+function ZeroForm({initial,onSave,onClose,guns,ammo}){
+  const [f,setF]=useState(initial||{date:"",gunId:"",ammoId:"",zeroDistance:"",scopeHeight:"",clickValue:"",adjustmentsH:"",adjustmentsV:"",notes:""});
+  const s=k=>v=>setF(x=>({...x,[k]:v}));
+  return(
+    <FWrap title={initial?"Edit Zero":"Log Zero"} onSave={()=>onSave(f)} onClose={onClose}>
+      <Fld label="Date"><DI value={f.date} onChange={s("date")}/></Fld>
+      <Fld label="Firearm">
+        <select value={f.gunId||""} onChange={e=>s("gunId")(e.target.value)} style={{color:f.gunId?"#fff":"#636366"}}>
+          <option value="">Select gun…</option>
+          {guns.map(g=><option key={g.id} value={g.id}>{g.manufacturer} {g.model||""}</option>)}
+        </select>
+      </Fld>
+      <Fld label="Ammo">
+        <select value={f.ammoId||""} onChange={e=>s("ammoId")(e.target.value)} style={{color:f.ammoId?"#fff":"#636366"}}>
+          <option value="">Select ammo…</option>
+          {ammo.map(a=><option key={a.id} value={a.id}>{a.manufacturer} {a.caliber} {a.grains}gr</option>)}
+        </select>
+      </Fld>
+      <Fld label="Zero Distance (yds)"><NI value={f.zeroDistance} onChange={s("zeroDistance")} placeholder="100"/></Fld>
+      <Fld label="Scope Height (in)"><NI value={f.scopeHeight} onChange={s("scopeHeight")} placeholder="1.5"/></Fld>
+      <Fld label="Click Value (MOA)"><NI value={f.clickValue} onChange={s("clickValue")} placeholder="0.25"/></Fld>
+      <Fld label="H Adjustment (clicks)"><NI value={f.adjustmentsH} onChange={s("adjustmentsH")} placeholder="0"/></Fld>
+      <Fld label="V Adjustment (clicks)"><NI value={f.adjustmentsV} onChange={s("adjustmentsV")} placeholder="0"/></Fld>
+      <Fld label="Notes" span><TA value={f.notes} onChange={s("notes")} placeholder="Why did you re-zero? What changed?"/></Fld>
+    </FWrap>
+  );
+}
+
+function MaintenanceForm({initial,onSave,onClose,guns}){
+  const [f,setF]=useState(initial||{date:"",gunId:"",roundsSinceLast:"",type:"",parts:"",notes:""});
+  const s=k=>v=>setF(x=>({...x,[k]:v}));
+  const mtypes=["Full Clean","Field Strip & Clean","Lubrication","Inspection","Parts Replacement","Trigger Job","Barrel Service","Other"];
+  return(
+    <FWrap title={initial?"Edit Maintenance":"Log Maintenance"} onSave={()=>onSave(f)} onClose={onClose}>
+      <Fld label="Date"><DI value={f.date} onChange={s("date")}/></Fld>
+      <Fld label="Firearm">
+        <select value={f.gunId||""} onChange={e=>s("gunId")(e.target.value)} style={{color:f.gunId?"#fff":"#636366"}}>
+          <option value="">Select gun…</option>
+          {guns.map(g=><option key={g.id} value={g.id}>{g.manufacturer} {g.model||""}</option>)}
+        </select>
+      </Fld>
+      <Fld label="Type">
+        <select value={f.type||""} onChange={e=>s("type")(e.target.value)} style={{color:f.type?"#fff":"#636366"}}>
+          <option value="">Select type…</option>
+          {mtypes.map(t=><option key={t} value={t}>{t}</option>)}
+        </select>
+      </Fld>
+      <Fld label="Rounds Since Last Clean"><NI value={f.roundsSinceLast} onChange={s("roundsSinceLast")} placeholder="250"/></Fld>
+      <Fld label="Parts Replaced/Used"><TI value={f.parts} onChange={s("parts")} placeholder="e.g. Recoil spring, CLP"/></Fld>
+      <Fld label="Notes" span><TA value={f.notes} onChange={s("notes")} placeholder="Observations, wear, anything notable…"/></Fld>
+    </FWrap>
+  );
+}
+
+function HuntForm({initial,onSave,onClose,guns,ammo}){
+  const [f,setF]=useState(initial||{date:"",location:"",species:"",gunId:"",ammoId:"",distance:"",outcome:"",weatherTemp:"",weatherWind:"",weatherCondition:"",notes:"",images:[]});
+  const s=k=>v=>setF(x=>({...x,[k]:v}));
+  const outcomes=["Harvested","Missed","Passed","Saw but no shot","No Contact"];
+  return(
+    <FWrap title={initial?"Edit Hunt Log":"Log Hunt"} onSave={()=>onSave(f)} onClose={onClose}>
+      <Fld label="Photos" span><ImgPicker images={f.images||[]} onChange={s("images")}/></Fld>
+      <Fld label="Date"><DI value={f.date} onChange={s("date")}/></Fld>
+      <Fld label="Location"><TI value={f.location} onChange={s("location")} placeholder="e.g. Back 40, Bowie County"/></Fld>
+      <Fld label="Species">
+        <select value={f.species||""} onChange={e=>s("species")(e.target.value)} style={{color:f.species?"#fff":"#636366"}}>
+          <option value="">Select…</option>
+          {HUNT_SPECIES.map(sp=><option key={sp} value={sp}>{sp}</option>)}
+        </select>
+      </Fld>
+      <Fld label="Outcome">
+        <select value={f.outcome||""} onChange={e=>s("outcome")(e.target.value)} style={{color:f.outcome?"#fff":"#636366"}}>
+          <option value="">Select…</option>
+          {outcomes.map(o=><option key={o} value={o}>{o}</option>)}
+        </select>
+      </Fld>
+      <Fld label="Firearm">
+        <select value={f.gunId||""} onChange={e=>s("gunId")(e.target.value)} style={{color:f.gunId?"#fff":"#636366"}}>
+          <option value="">Select gun…</option>
+          {guns.map(g=><option key={g.id} value={g.id}>{g.manufacturer} {g.model||""}</option>)}
+        </select>
+      </Fld>
+      <Fld label="Ammo">
+        <select value={f.ammoId||""} onChange={e=>s("ammoId")(e.target.value)} style={{color:f.ammoId?"#fff":"#636366"}}>
+          <option value="">Select ammo…</option>
+          {ammo.map(a=><option key={a.id} value={a.id}>{a.manufacturer} {a.caliber} {a.grains}gr</option>)}
+        </select>
+      </Fld>
+      <Fld label="Shot Distance (yds)"><NI value={f.distance} onChange={s("distance")} placeholder="150"/></Fld>
+      <Fld label="Temp (°F)"><NI value={f.weatherTemp} onChange={s("weatherTemp")} placeholder="55"/></Fld>
+      <Fld label="Wind (mph)"><NI value={f.weatherWind} onChange={s("weatherWind")} placeholder="8"/></Fld>
+      <Fld label="Conditions">
+        <select value={f.weatherCondition||""} onChange={e=>s("weatherCondition")(e.target.value)} style={{color:f.weatherCondition?"#fff":"#636366"}}>
+          <option value="">Select…</option>
+          {WEATHER_CONDITIONS.map(c=><option key={c} value={c}>{c}</option>)}
+        </select>
+      </Fld>
+      <Fld label="Notes" span><TA value={f.notes} onChange={s("notes")} placeholder="Shot placement, conditions, story…"/></Fld>
+    </FWrap>
+  );
+}
+
+function LoadForm({initial,onSave,onClose,lists}){
+  const [f,setF]=useState(initial||{name:"",caliber:"",caseType:"factory",caseBrand:"",primer:"",powder:"",charge:"",bullet:"",bulletWeight:"",bulletType:"",oal:"",notes:"",tested:false,accuracy:""});
+  const s=k=>v=>setF(x=>({...x,[k]:v}));
+  return(
+    <FWrap title={initial?"Edit Load":"Add Load Data"} onSave={()=>onSave(f)} onClose={onClose}>
+      <Fld label="Load Name" span><TI value={f.name} onChange={s("name")} placeholder="e.g. 308 Hunting Load v1"/></Fld>
+      <Fld label="Caliber"><ASelect value={f.caliber} onChange={s("caliber")} options={lists.calibers} onAdd={lists.addCaliber}/></Fld>
+      <Fld label="Case Type">
+        <select value={f.caseType} onChange={e=>s("caseType")(e.target.value)}>
+          <option value="factory">Factory</option>
+          <option value="handload">Handload</option>
+        </select>
+      </Fld>
+      <Fld label="Case Brand"><TI value={f.caseBrand} onChange={s("caseBrand")} placeholder="e.g. Lapua, Winchester"/></Fld>
+      <Fld label="Primer"><TI value={f.primer} onChange={s("primer")} placeholder="e.g. Federal 210M"/></Fld>
+      <Fld label="Powder"><TI value={f.powder} onChange={s("powder")} placeholder="e.g. IMR 4064"/></Fld>
+      <Fld label="Charge (gr)"><NI value={f.charge} onChange={s("charge")} placeholder="44.0"/></Fld>
+      <Fld label="Bullet"><TI value={f.bullet} onChange={s("bullet")} placeholder="e.g. Hornady ELD-X"/></Fld>
+      <Fld label="Bullet Weight (gr)"><NI value={f.bulletWeight} onChange={s("bulletWeight")} placeholder="178"/></Fld>
+      <Fld label="Bullet Type"><TI value={f.bulletType} onChange={s("bulletType")} placeholder="e.g. BTHP, SP"/></Fld>
+      <Fld label="OAL (in)"><NI value={f.oal} onChange={s("oal")} placeholder="2.810"/></Fld>
+      <Fld label="Accuracy / Groups"><TI value={f.accuracy} onChange={s("accuracy")} placeholder="e.g. 0.5 MOA @ 100yds"/></Fld>
+      <Fld label="Notes" span><TA value={f.notes} onChange={s("notes")} placeholder="Velocity, observations, compare to other loads…"/></Fld>
+    </FWrap>
+  );
+}
+
+// ── PBZ Calculator ────────────────────────────────────────────────────────────
+function PBZCalculator({units}){
+  const [v,setV]=useState({velocity:"2700",bc:"0.475",weight:"150",vitalSize:"8",scopeHeight:"1.5",zeroRange:"100"});
+  const [result,setResult]=useState(null);
+  const s=k=>e=>setV(x=>({...x,[k]:e.target.value}));
+
+  function calculate(){
+    const vel=parseFloat(v.velocity);
+    const bc=parseFloat(v.bc);
+    const wt=parseFloat(v.weight);
+    const vital=parseFloat(v.vitalSize)/2; // radius
+    const sh=parseFloat(v.scopeHeight);
+    const zero=parseFloat(v.zeroRange);
+    if(!vel||!bc||!wt||!vital)return;
+
+    // Simplified ballistic drop calculation
+    const distances=[0,50,100,150,200,250,300,350,400,450,500];
+    const drops=[];
+    const g=32.174; // ft/s²
+    const velFps=vel;
+
+    distances.forEach(d=>{
+      const dFt=d*3; // yards to feet
+      const tof=dFt/velFps*(1+(dFt/(bc*velFps*0.1))*0.5); // simplified
+      const drop=0.5*g*tof*tof*12; // inches
+      const lineOfSight=(sh)*(d/zero); // scope height adjustment
+      const trajectory=lineOfSight-drop;
+      drops.push({d,trajectory:trajectory.toFixed(1)});
+    });
+
+    // Find MPBR — max range where bullet stays within vital zone radius
+    let mpbr=0;
+    drops.forEach(({d,trajectory})=>{
+      const t=parseFloat(trajectory);
+      if(t>=-vital&&t<=vital)mpbr=d;
+    });
+
+    // Find PBZ near zero range
+    const pbzZero=parseFloat(drops.find(x=>x.d===zero)?.trajectory||"0");
+
+    setResult({drops,mpbr,pbzZero,vital});
+  }
+
+  const distUnit=units==="metric"?"m":"yds";
+  const velUnit=units==="metric"?"m/s":"fps";
+
+  return(
+    <div>
+      <div style={{background:"#1c1c1e",borderRadius:16,padding:"20px",marginBottom:16,border:"1px solid #2c2c2e"}}>
+        <div style={{color:"#ff9f0a",fontSize:13,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:14}}>Bullet & Rifle Data</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+          {[["Muzzle Velocity ("+velUnit+")","velocity","2700"],["Ballistic Coeff (G1)","bc","0.475"],["Bullet Weight (gr)","weight","150"],["Vital Zone (in dia)","vitalSize","8"],["Scope Height (in)","scopeHeight","1.5"],["Zero Range ("+distUnit+")","zeroRange","100"]].map(([l,k,ph])=>(
+            <div key={k}>
+              <div style={{color:"#8e8e93",fontSize:11,fontWeight:600,textTransform:"uppercase",marginBottom:5}}>{l}</div>
+              <input type="number" value={v[k]} onChange={s(k)} placeholder={ph} style={{background:"#2c2c2e",border:"none",borderRadius:10,padding:"10px 14px",color:"#fff",fontSize:15,outline:"none",width:"100%"}}/>
+            </div>
+          ))}
+        </div>
+        <button onClick={calculate} style={{marginTop:16,width:"100%",padding:"14px",borderRadius:12,background:"#ff9f0a",border:"none",color:"#000",fontSize:16,fontWeight:700}}>Calculate →</button>
+      </div>
+
+      {result&&(
+        <>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+            <div style={{background:"#1c1c1e",borderRadius:14,padding:"16px 18px",border:"1px solid #30d15844"}}>
+              <div style={{color:"#30d158",fontSize:26,fontWeight:800}}>{result.mpbr} {distUnit}</div>
+              <div style={{color:"#636366",fontSize:12,fontWeight:600,marginTop:3}}>MAXIMUM POINT-BLANK RANGE</div>
+              <div style={{color:"#8e8e93",fontSize:12,marginTop:6}}>Bullet stays within ±{result.vital}" of aim point</div>
+            </div>
+            <div style={{background:"#1c1c1e",borderRadius:14,padding:"16px 18px",border:"1px solid #ff9f0a44"}}>
+              <div style={{color:"#ff9f0a",fontSize:26,fontWeight:800}}>{result.pbzZero}"</div>
+              <div style={{color:"#636366",fontSize:12,fontWeight:600,marginTop:3}}>TRAJECTORY AT ZERO ({v.zeroRange} {distUnit})</div>
+              <div style={{color:"#8e8e93",fontSize:12,marginTop:6}}>Positive = above line of sight</div>
+            </div>
+          </div>
+          <div style={{background:"#1c1c1e",borderRadius:14,border:"1px solid #2c2c2e",overflow:"hidden"}}>
+            <div style={{padding:"12px 16px",borderBottom:"1px solid #2c2c2e",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <span style={{color:"#8e8e93",fontSize:13,fontWeight:600}}>Distance ({distUnit})</span>
+              <span style={{color:"#8e8e93",fontSize:13,fontWeight:600}}>Trajectory (in)</span>
+            </div>
+            {result.drops.map(({d,trajectory})=>{
+              const t=parseFloat(trajectory);
+              const inZone=Math.abs(t)<=result.vital;
+              return(
+                <div key={d} style={{padding:"10px 16px",borderBottom:"1px solid #2c2c2e",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,background:inZone?"#0d1f0d":"transparent"}}>
+                  <span style={{color:"#fff",fontSize:14}}>{d} {distUnit}</span>
+                  <span style={{color:inZone?"#30d158":t>0?"#ff9f0a":"#ff453a",fontSize:14,fontWeight:600}}>{t>0?"+":""}{trajectory}"</span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Shooting Games ────────────────────────────────────────────────────────────
+function GamesView(){
+  const [sel,setSel]=useState(null);
+  const [gameState,setGameState]=useState(null);
+
+  function startGame(game){
+    setSel(game);
+    if(game.scoring==="poker"){
+      setGameState({players:[{name:"Player 1",hand:[]},{name:"Player 2",hand:[]}],currentPlayer:0,round:0});
+    } else if(game.scoring==="points"){
+      setGameState({players:[{name:"Player 1",score:0},{name:"Player 2",score:0}],currentScore:null,lastShooter:null});
+    } else if(game.scoring==="streak"){
+      setGameState({players:[{name:"Player 1",streak:0,locked:0}],currentStreak:0});
+    } else if(game.scoring==="rounds"){
+      setGameState({players:[{name:"Player 1",wins:0},{name:"Player 2",wins:0}],round:1,maxRounds:10});
+    } else if(game.scoring==="time"){
+      setGameState({players:[{name:"Player 1",time:null},{name:"Player 2",time:null}],timing:false,start:null});
+    }
+  }
+
+  if(sel){
+    return <GameSession game={sel} state={gameState} setState={setGameState} onBack={()=>{setSel(null);setGameState(null);}}/>;
+  }
+
+  return(
+    <div>
+      <div style={{color:"#8e8e93",fontSize:14,marginBottom:16}}>Select a game to read the rules and start tracking score.</div>
+      {SHOOTING_GAMES.map(game=>(
+        <div key={game.id} className="card" onClick={()=>setSel(game)}>
+          <div style={{flex:1}}>
+            <div style={{color:"#fff",fontWeight:700,fontSize:16}}>{game.name}</div>
+            <div style={{color:"#636366",fontSize:13}}>{game.players} players</div>
+          </div>
+          <div style={{color:"#48484a"}}><IChev/></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GameSession({game,state,setState,onBack}){
+  const [tab,setTab]=useState("rules");
+  const defaultCount = game.scoring==="streak"?1:game.scoring==="points"?2:2;
+  const [playerNames,setPlayerNames]=useState(["Player 1","Player 2"]);
+  const [scores,setScores]=useState({});
+  const [streakCount,setStreakCount]=useState(0);
+  const [lockedStreak,setLockedStreak]=useState(0);
+  const [roundWins,setRoundWins]=useState({});
+  const [times,setTimes]=useState({});
+  const [penaltyInput,setPenaltyInput]=useState({});
+
+  const maxPlayers = game.scoring==="poker"?6:game.scoring==="streak"?1:game.scoring==="points"?2:6;
+  const minPlayers = game.scoring==="streak"?1:2;
+
+  function addPlayer(){
+    if(playerNames.length>=maxPlayers)return;
+    setPlayerNames(p=>[...p,`Player ${p.length+1}`]);
+  }
+  function removePlayer(){
+    if(playerNames.length<=minPlayers)return;
+    const idx=playerNames.length-1;
+    setPlayerNames(p=>p.slice(0,-1));
+    setScores(s=>{const n={...s};delete n[idx];return n;});
+    setRoundWins(s=>{const n={...s};delete n[idx];return n;});
+    setTimes(s=>{const n={...s};delete n[idx];return n;});
+    setPenaltyInput(s=>{const n={...s};delete n[idx];return n;});
+  }
+
+  return(
+    <div style={{height:"100%",display:"flex",flexDirection:"column"}}>
+      <div style={{display:"flex",alignItems:"center",padding:"0 0 16px",gap:14,borderBottom:"1px solid #2c2c2e",marginBottom:16}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"#ff9f0a",fontSize:16,fontWeight:600}}>‹ Games</button>
+        <div style={{color:"#fff",fontWeight:700,fontSize:18,flex:1}}>{game.name}</div>
+      </div>
+      <div style={{display:"flex",gap:8,marginBottom:16,background:"#2c2c2e",borderRadius:12,padding:4}}>
+        {[["rules","Rules"],["score","Scorekeeper"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"9px",borderRadius:9,border:"none",background:tab===k?"#ff9f0a":"transparent",color:tab===k?"#000":"#8e8e93",fontWeight:700,fontSize:14}}>{l}</button>
+        ))}
+      </div>
+
+      {tab==="rules"&&(
+        <div>
+          <div style={{background:"#1c1c1e",borderRadius:14,padding:"16px",marginBottom:12,border:"1px solid #2c2c2e"}}>
+            <div style={{color:"#ff9f0a",fontSize:12,fontWeight:700,textTransform:"uppercase",marginBottom:8}}>Overview</div>
+            <div style={{color:"#e5e5ea",fontSize:15,lineHeight:"1.6"}}>{game.description}</div>
+          </div>
+          <div style={{background:"#1c1c1e",borderRadius:14,padding:"16px",border:"1px solid #2c2c2e"}}>
+            <div style={{color:"#ff9f0a",fontSize:12,fontWeight:700,textTransform:"uppercase",marginBottom:12}}>Rules</div>
+            {game.rules.map((r,i)=>(
+              <div key={i} style={{display:"flex",gap:12,marginBottom:10}}>
+                <div style={{width:22,height:22,borderRadius:"50%",background:"#ff9f0a22",color:"#ff9f0a",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{i+1}</div>
+                <div style={{color:"#e5e5ea",fontSize:14,lineHeight:"1.6"}}>{r}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab==="score"&&(
+        <div>
+          {/* Generic score input for all games */}
+          <div style={{background:"#1c1c1e",borderRadius:14,padding:"16px",marginBottom:12,border:"1px solid #2c2c2e"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div style={{color:"#ff9f0a",fontSize:12,fontWeight:700,textTransform:"uppercase"}}>Players ({playerNames.length})</div>
+              {game.scoring!=="streak"&&game.scoring!=="points"&&(
+                <div style={{display:"flex",gap:8}}>
+                  {playerNames.length>minPlayers&&<button onClick={removePlayer} style={{background:"#3a3a3c",border:"none",borderRadius:8,padding:"5px 12px",color:"#fff",fontSize:13,fontWeight:600}}>− Remove</button>}
+                  {playerNames.length<maxPlayers&&<button onClick={addPlayer} style={{background:"#ff9f0a22",border:"1px solid #ff9f0a44",borderRadius:8,padding:"5px 12px",color:"#ff9f0a",fontSize:13,fontWeight:600}}>+ Add</button>}
+                </div>
+              )}
+            </div>
+            {playerNames.map((name,i)=>(
+              <div key={i} style={{display:"flex",gap:10,marginBottom:10,alignItems:"center"}}>
+                <span style={{color:"#636366",fontSize:14,width:24,flexShrink:0}}>P{i+1}</span>
+                <input type="text" value={name} onChange={e=>{const n=[...playerNames];n[i]=e.target.value;setPlayerNames(n);}} style={{flex:1,background:"#2c2c2e",border:"none",borderRadius:10,padding:"10px 14px",color:"#fff",fontSize:15,outline:"none"}}/>
+                {game.scoring==="time"&&(
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <input type="number" value={times[i]||""} onChange={e=>{const t={...times};t[i]=e.target.value;setTimes(t);}} placeholder="secs" style={{width:80,background:"#2c2c2e",border:"none",borderRadius:10,padding:"10px 14px",color:"#fff",fontSize:15,outline:"none"}}/>
+                    <input type="number" value={penaltyInput[i]||""} onChange={e=>{const p={...penaltyInput};p[i]=e.target.value;setPenaltyInput(p);}} placeholder="+pen" style={{width:70,background:"#2c2c2e",border:"none",borderRadius:10,padding:"10px 14px",color:"#ff453a",fontSize:15,outline:"none"}}/>
+                  </div>
+                )}
+                {game.scoring==="rounds"&&(
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <button onClick={()=>{const r={...roundWins};r[i]=(r[i]||0)+1;setRoundWins(r);}} style={{background:"#30d15822",border:"1px solid #30d15844",borderRadius:10,padding:"8px 14px",color:"#30d158",fontWeight:700,fontSize:14}}>+Win</button>
+                    <span style={{color:"#fff",fontWeight:700,fontSize:18,minWidth:24,textAlign:"center"}}>{roundWins[i]||0}</span>
+                  </div>
+                )}
+                {game.scoring==="points"&&(
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <button onClick={()=>{const s={...scores};s[i]=(s[i]||0)+1;setScores(s);}} style={{background:"#ff9f0a22",border:"1px solid #ff9f0a44",borderRadius:10,padding:"8px 14px",color:"#ff9f0a",fontWeight:700}}>+Pt</button>
+                    <span style={{color:"#fff",fontWeight:700,fontSize:18,minWidth:24,textAlign:"center"}}>{scores[i]||0}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {game.scoring==="streak"&&(
+            <div style={{background:"#1c1c1e",borderRadius:14,padding:"16px",border:"1px solid #2c2c2e"}}>
+              <div style={{color:"#ff9f0a",fontSize:12,fontWeight:700,textTransform:"uppercase",marginBottom:12}}>Streak Tracker</div>
+              <div style={{display:"flex",gap:12,marginBottom:16}}>
+                <div style={{flex:1,background:"#2c2c2e",borderRadius:12,padding:"16px",textAlign:"center"}}>
+                  <div style={{color:"#30d158",fontSize:36,fontWeight:800}}>{streakCount}</div>
+                  <div style={{color:"#636366",fontSize:12,marginTop:4}}>CURRENT STREAK</div>
+                </div>
+                <div style={{flex:1,background:"#2c2c2e",borderRadius:12,padding:"16px",textAlign:"center"}}>
+                  <div style={{color:"#ff9f0a",fontSize:36,fontWeight:800}}>{lockedStreak}</div>
+                  <div style={{color:"#636366",fontSize:12,marginTop:4}}>LOCKED IN</div>
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+                <button onClick={()=>setStreakCount(v=>v+1)} style={{padding:"14px",borderRadius:12,background:"#30d15822",border:"1px solid #30d15844",color:"#30d158",fontWeight:700,fontSize:15}}>✓ Ten</button>
+                <button onClick={()=>setStreakCount(0)} style={{padding:"14px",borderRadius:12,background:"#ff453a22",border:"1px solid #ff453a44",color:"#ff453a",fontWeight:700,fontSize:15}}>✗ Miss</button>
+                <button onClick={()=>{setLockedStreak(streakCount);setStreakCount(0);}} style={{padding:"14px",borderRadius:12,background:"#ff9f0a22",border:"1px solid #ff9f0a44",color:"#ff9f0a",fontWeight:700,fontSize:15}}>🔒 Lock</button>
+              </div>
+            </div>
+          )}
+
+          {game.scoring==="time"&&(
+            <div style={{background:"#1c1c1e",borderRadius:14,padding:"16px",border:"1px solid #2c2c2e"}}>
+              <div style={{color:"#ff9f0a",fontSize:12,fontWeight:700,textTransform:"uppercase",marginBottom:12}}>Results (time + penalty seconds)</div>
+              {Object.keys(times).length>0&&(
+                <div>
+                  {Object.entries(times).sort(([,a],[,b])=>{
+                    const ta=parseFloat(a)+(parseFloat(penaltyInput[Object.keys(times).indexOf(Object.keys(times).find(k=>k===a))])||0);
+                    const tb=parseFloat(b)+(parseFloat(penaltyInput[Object.keys(times).indexOf(Object.keys(times).find(k=>k===b))])||0);
+                    return ta-tb;
+                  }).map(([i,t],rank)=>{
+                    const total=(parseFloat(t)||0)+(parseFloat(penaltyInput[i])||0);
+                    return(
+                      <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #2c2c2e"}}>
+                        <span style={{color:rank===0?"#ffd60a":"#fff",fontWeight:rank===0?700:400}}>{rank===0?"🥇 ":rank===1?"🥈 ":"🥉 "}{playerNames[i]||`Player ${parseInt(i)+1}`}</span>
+                        <span style={{color:"#ff9f0a",fontWeight:700}}>{total.toFixed(1)}s</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {(game.scoring==="points"||game.scoring==="rounds")&&(
+            <div style={{background:"#1c1c1e",borderRadius:14,padding:"16px",border:"1px solid #2c2c2e",marginTop:12}}>
+              <div style={{color:"#ff9f0a",fontSize:12,fontWeight:700,textTransform:"uppercase",marginBottom:12}}>Scoreboard</div>
+              {playerNames.map((name,i)=>{
+                const s=game.scoring==="points"?(scores[i]||0):(roundWins[i]||0);
+                const max=10;
+                return(
+                  <div key={i} style={{marginBottom:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{color:"#fff",fontSize:14}}>{name}</span>
+                      <span style={{color:"#ff9f0a",fontWeight:700}}>{s} / {max}</span>
+                    </div>
+                    <div style={{height:8,background:"#2c2c2e",borderRadius:4,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${(s/max)*100}%`,background:"#ff9f0a",borderRadius:4,transition:"width 0.3s"}}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <button onClick={()=>{setScores({});setRoundWins({});setTimes({});setPenaltyInput({});setStreakCount(0);setLockedStreak(0);}} style={{marginTop:16,width:"100%",padding:"14px",borderRadius:12,background:"#3a3a3c",border:"none",color:"#fff",fontSize:15,fontWeight:600}}>Reset Scores</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Gun Profile (Full View) ───────────────────────────────────────────────────
+function GunProfile({gun,accessories,rangeSessions,zeros,maintenance,loads,hunts,ammo,guns,onClose,onEdit,onDelete,onAddAcc,onViewAcc,onAddZero,onAddSession,onAddMaint,settings,lists}){
+  const [sections,setSections]=useState({info:true,accessories:true,zeros:true,range:true,maintenance:true,loads:false,hunts:false});
+  const toggle=k=>setSections(v=>({...v,[k]:!v[k]}));
+
+  const gunAcc=accessories.filter(a=>a.gunId===gun.id);
+  const gunZeros=zeros.filter(z=>z.gunId==gun.id);
+  const gunSessions=rangeSessions.filter(s=>s.gunId==gun.id);
+  const gunMaint=maintenance.filter(m=>m.gunId==gun.id);
+  const gunLoads=loads.filter(l=>l.caliber===gun.caliber);
+  const gunHunts=hunts.filter(h=>h.gunId==gun.id);
+  const totalRounds=gunSessions.reduce((s,sess)=>s+(parseInt(sess.roundsFired)||0),0);
+  const accTotal=gunAcc.reduce((s,a)=>s+(parseFloat(a.purchasePrice)||0),0);
+
+  return(
+    <Overlay onClose={onClose} wide>
+      <SheetHeader title="Gun Profile" onBack={onClose} onDelete={onDelete} onSave={onEdit} saveLabel="Edit"/>
+      <div style={{padding:"20px 28px 28px",overflowY:"auto"}}>
+        {/* Hero */}
+        <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:24,marginBottom:20}}>
+          <div>
+            <PV images={gun.images} placeholder={<IGun/>}/>
+            <div style={{fontSize:24,fontWeight:800,color:"#fff",marginBottom:3}}>{gun.manufacturer} {gun.model||""}</div>
+            {gun.gunType&&<div style={{color:"#636366",fontSize:13,marginBottom:2}}>{gun.gunType}</div>}
+            {gun.action&&<div style={{color:"#636366",fontSize:13,marginBottom:8}}>{gun.action}</div>}
+            <div style={{color:"#ff9f0a",fontSize:14,fontWeight:600,marginBottom:12}}>{gun.caliber}</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {[["Rounds Fired",totalRounds],["Accessories",gunAcc.length],["Sessions",gunSessions.length],["Zeros",gunZeros.length]].map(([l,v])=>(
+                <div key={l} style={{background:"#2c2c2e",borderRadius:10,padding:"10px 12px"}}>
+                  <div style={{color:"#ff9f0a",fontSize:18,fontWeight:800}}>{v}</div>
+                  <div style={{color:"#636366",fontSize:11,fontWeight:600}}>{l.toUpperCase()}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            {/* Section toggles */}
+            <div style={{background:"#2c2c2e",borderRadius:14,padding:"14px 16px",marginBottom:16}}>
+              <div style={{color:"#8e8e93",fontSize:12,fontWeight:600,textTransform:"uppercase",marginBottom:10}}>Show Sections</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {[["info","Basic Info"],["accessories","Accessories"],["zeros","Zeros"],["range","Range Sessions"],["maintenance","Maintenance"],["loads","Load Data"],["hunts","Hunt Log"]].map(([k,l])=>(
+                  <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0"}}>
+                    <span style={{color:sections[k]?"#fff":"#636366",fontSize:14}}>{l}</span>
+                    <Toggle on={sections[k]} onToggle={()=>toggle(k)}/>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sections */}
+        {sections.info&&(
+          <SectionBlock title="Basic Info" defaultOpen>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {[["Serial #",gun.serialNumber],["Finish",gun.finish],["Purchased",gun.purchaseDate],["Price Paid",gun.purchasePrice?fmtP(gun.purchasePrice):null]].filter(([,v])=>v).map(([l,v])=>(
+                <div key={l} style={{background:"#2c2c2e",borderRadius:10,padding:"10px 14px"}}>
+                  <div style={{color:"#8e8e93",fontSize:11,fontWeight:600,textTransform:"uppercase",marginBottom:3}}>{l}</div>
+                  <div style={{color:"#fff",fontSize:14,fontWeight:600}}>{v}</div>
+                </div>
+              ))}
+            </div>
+            {gun.notes&&<div style={{background:"#2c2c2e",borderRadius:10,padding:"12px 14px",marginTop:8}}><div style={{color:"#8e8e93",fontSize:11,fontWeight:600,textTransform:"uppercase",marginBottom:4}}>Notes</div><div style={{color:"#fff",fontSize:14}}>{gun.notes}</div></div>}
+          </SectionBlock>
+        )}
+
+        {sections.accessories&&(
+          <SectionBlock title="Accessories" count={gunAcc.length} color="#bf5af2" onAdd={onAddAcc} addLabel="Add">
+            {gunAcc.length===0?<div style={{color:"#48484a",fontSize:14,textAlign:"center",padding:"10px 0"}}>No accessories attached</div>:gunAcc.map(a=>(
+              <div key={a.id} onClick={()=>onViewAcc(a)} className="card" style={{marginBottom:8}}>
+                <div style={{color:"#bf5af2",opacity:0.7,flexShrink:0}}><IWrench/></div>
+                <div style={{flex:1}}><div style={{color:"#fff",fontWeight:600,fontSize:14}}>{a.manufacturer} {a.model||""}</div><div style={{marginTop:3}}><AccBadge category={a.category}/></div></div>
+                {a.purchasePrice&&<span style={{color:"#636366",fontSize:13}}>{fmtP(a.purchasePrice)}</span>}
+                <div style={{color:"#48484a"}}><IChev/></div>
+              </div>
+            ))}
+            {gunAcc.length>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"10px 0 0"}}><span style={{color:"#636666",fontSize:13}}>Total</span><span style={{color:"#ff9f0a",fontWeight:700,fontSize:13}}>{fmtP(accTotal)}</span></div>}
+          </SectionBlock>
+        )}
+
+        {sections.zeros&&(
+          <SectionBlock title="Zero Log" count={gunZeros.length} color="#0a84ff" onAdd={onAddZero} addLabel="Log Zero">
+            {gunZeros.length===0?<div style={{color:"#48484a",fontSize:14,textAlign:"center",padding:"10px 0"}}>No zeros logged</div>:gunZeros.sort((a,b)=>b.date>a.date?1:-1).map(z=>{
+              const a=ammo.find(x=>x.id==z.ammoId);
+              return(
+                <div key={z.id} style={{background:"#2c2c2e",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                    <span style={{color:"#fff",fontWeight:600,fontSize:14}}>{z.zeroDistance} yds</span>
+                    <span style={{color:"#636366",fontSize:13}}>{z.date}</span>
+                  </div>
+                  {a&&<div style={{color:"#8e8e93",fontSize:13}}>{a.manufacturer} {a.caliber} {a.grains}gr</div>}
+                  {z.notes&&<div style={{color:"#636366",fontSize:12,marginTop:4}}>{z.notes}</div>}
+                </div>
+              );
+            })}
+          </SectionBlock>
+        )}
+
+        {sections.range&&(
+          <SectionBlock title="Range Sessions" count={gunSessions.length} color="#30d158" onAdd={onAddSession} addLabel="Log Session">
+            {gunSessions.length===0?<div style={{color:"#48484a",fontSize:14,textAlign:"center",padding:"10px 0"}}>No sessions logged</div>:gunSessions.sort((a,b)=>b.date>a.date?1:-1).map(sess=>{
+              const a=ammo.find(x=>x.id==sess.ammoId);
+              return(
+                <div key={sess.id} style={{background:"#2c2c2e",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                    <span style={{color:"#fff",fontWeight:600,fontSize:14}}>{sess.location||"Range Session"}</span>
+                    <span style={{color:"#636366",fontSize:13}}>{sess.date}</span>
+                  </div>
+                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                    {sess.roundsFired&&<span style={{color:"#30d158",fontSize:13}}>{sess.roundsFired} rds</span>}
+                    {sess.distance&&<span style={{color:"#8e8e93",fontSize:13}}>{sess.distance} yds</span>}
+                    {sess.weatherCondition&&<span style={{color:"#8e8e93",fontSize:13}}>{sess.weatherCondition}</span>}
+                  </div>
+                  {a&&<div style={{color:"#8e8e93",fontSize:12,marginTop:4}}>{a.manufacturer} {a.caliber} {a.grains}gr</div>}
+                  {sess.notes&&<div style={{color:"#636366",fontSize:12,marginTop:4}}>{sess.notes}</div>}
+                </div>
+              );
+            })}
+          </SectionBlock>
+        )}
+
+        {sections.maintenance&&(
+          <SectionBlock title="Maintenance Log" count={gunMaint.length} color="#ff9f0a" onAdd={onAddMaint} addLabel="Log">
+            {gunMaint.length===0?<div style={{color:"#48484a",fontSize:14,textAlign:"center",padding:"10px 0"}}>No maintenance logged</div>:gunMaint.sort((a,b)=>b.date>a.date?1:-1).map(m=>(
+              <div key={m.id} style={{background:"#2c2c2e",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                  <span style={{color:"#fff",fontWeight:600,fontSize:14}}>{m.type||"Maintenance"}</span>
+                  <span style={{color:"#636366",fontSize:13}}>{m.date}</span>
+                </div>
+                {m.roundsSinceLast&&<div style={{color:"#8e8e93",fontSize:13}}>{m.roundsSinceLast} rds since last clean</div>}
+                {m.parts&&<div style={{color:"#8e8e93",fontSize:12,marginTop:3}}>Parts: {m.parts}</div>}
+                {m.notes&&<div style={{color:"#636366",fontSize:12,marginTop:4}}>{m.notes}</div>}
+              </div>
+            ))}
+          </SectionBlock>
+        )}
+
+        {sections.loads&&(
+          <SectionBlock title="Compatible Loads" count={gunLoads.length} color="#5e5ce6">
+            {gunLoads.length===0?<div style={{color:"#48484a",fontSize:14,textAlign:"center",padding:"10px 0"}}>No loads for {gun.caliber}</div>:gunLoads.map(l=>(
+              <div key={l.id} style={{background:"#2c2c2e",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+                <div style={{color:"#fff",fontWeight:600,fontSize:14,marginBottom:4}}>{l.name||l.caliber}</div>
+                <div style={{color:"#8e8e93",fontSize:13}}>{l.bullet} {l.bulletWeight}gr — {l.powder} {l.charge}gr</div>
+                {l.accuracy&&<div style={{color:"#30d158",fontSize:12,marginTop:3}}>{l.accuracy}</div>}
+              </div>
+            ))}
+          </SectionBlock>
+        )}
+
+        {sections.hunts&&(
+          <SectionBlock title="Hunt Log" count={gunHunts.length} color="#ac8e68">
+            {gunHunts.length===0?<div style={{color:"#48484a",fontSize:14,textAlign:"center",padding:"10px 0"}}>No hunts logged with this firearm</div>:gunHunts.sort((a,b)=>b.date>a.date?1:-1).map(h=>(
+              <div key={h.id} style={{background:"#2c2c2e",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                  <span style={{color:"#fff",fontWeight:600,fontSize:14}}>{h.species||"Hunt"}</span>
+                  <span style={{color:h.outcome==="Harvested"?"#30d158":h.outcome==="Missed"?"#ff453a":"#636366",fontSize:13,fontWeight:600}}>{h.outcome}</span>
+                </div>
+                <div style={{color:"#8e8e93",fontSize:13}}>{h.location}{h.distance?` · ${h.distance} yds`:""}</div>
+                <div style={{color:"#636366",fontSize:12,marginTop:2}}>{h.date}</div>
+              </div>
+            ))}
+          </SectionBlock>
+        )}
+      </div>
+    </Overlay>
+  );
+}
+
+// ── Settings View ─────────────────────────────────────────────────────────────
+function SettingsView({settings,onSave}){
+  const [s,setS]=useState(settings);
+  const tm=k=>setS(x=>({...x,modules:{...x.modules,[k]:!x.modules[k]}}));
+
+  const MODULE_LIST=[
+    {key:"inventory",label:"Inventory",desc:"Firearms, ammo & accessories"},
+    {key:"range",label:"Range Sessions",desc:"Log and track range visits"},
+    {key:"pbz",label:"PBZ / MPBR Calculator",desc:"Point blank zero calculator"},
+    {key:"dope",label:"Dope Card",desc:"Drop charts per firearm"},
+    {key:"maintenance",label:"Maintenance Tracker",desc:"Cleaning and service log"},
+    {key:"drills",label:"Drill Log",desc:"Timed drills and training"},
+    {key:"zeros",label:"Zero Log",desc:"Track all your zeros"},
+    {key:"games",label:"Shooting Games",desc:"Rules and scorekeepers"},
+    {key:"hunting",label:"Hunt Log",desc:"Track hunts and harvests"},
+    {key:"gear",label:"Gear Checklists",desc:"Range bag and hunt pack lists"},
+    {key:"reloading",label:"Load Data",desc:"Factory and handload recipes"},
+  ];
+
+  return(
+    <div style={{padding:"0 0 28px"}}>
+      <div style={{background:"#1c1c1e",borderRadius:16,overflow:"hidden",marginBottom:16,border:"1px solid #2c2c2e"}}>
+        <div style={{padding:"14px 18px",borderBottom:"1px solid #2c2c2e"}}>
+          <div style={{color:"#fff",fontWeight:700,fontSize:16,marginBottom:2}}>Units</div>
+          <div style={{color:"#636366",fontSize:13}}>Default for distances, velocity, and weight</div>
+        </div>
+        <div style={{display:"flex",margin:"12px 18px",background:"#2c2c2e",borderRadius:12,padding:4}}>
+          {[["imperial","Imperial (yds, fps, gr)"],["metric","Metric (m, m/s, g)"]].map(([k,l])=>(
+            <button key={k} onClick={()=>setS(x=>({...x,units:k}))} style={{flex:1,padding:"10px",borderRadius:9,border:"none",background:s.units===k?"#ff9f0a":"transparent",color:s.units===k?"#000":"#8e8e93",fontWeight:700,fontSize:14}}>{l}</button>
+          ))}
+        </div>
+        <div style={{height:4}}/>
+      </div>
+
+      <div style={{background:"#1c1c1e",borderRadius:16,overflow:"hidden",border:"1px solid #2c2c2e",marginBottom:16}}>
+        <div style={{padding:"14px 18px",borderBottom:"1px solid #2c2c2e"}}>
+          <div style={{color:"#fff",fontWeight:700,fontSize:16,marginBottom:2}}>Modules</div>
+          <div style={{color:"#636366",fontSize:13}}>Show or hide sections in the sidebar</div>
+        </div>
+        {MODULE_LIST.map(({key,label,desc},i)=>(
+          <div key={key} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 18px",borderBottom:i<MODULE_LIST.length-1?"1px solid #2c2c2e":"none"}}>
+            <div>
+              <div style={{color:"#fff",fontSize:15,fontWeight:500}}>{label}</div>
+              <div style={{color:"#636366",fontSize:13,marginTop:2}}>{desc}</div>
+            </div>
+            <Toggle on={s.modules[key]!==false} onToggle={()=>tm(key)}/>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={()=>onSave(s)} style={{width:"100%",padding:"16px",borderRadius:14,background:"#ff9f0a",border:"none",color:"#000",fontSize:17,fontWeight:700}}>Save Settings</button>
+    </div>
+  );
+}
+
+// ── Gear Checklist ────────────────────────────────────────────────────────────
+const DEFAULT_LISTS={
+  range:["Eye protection","Ear protection","Targets","Target stand","Staple gun","Ammo","Magazines/speed loaders","Cleaning kit","Bore snake","CLP/oil","Timer","Notebook","First aid kit","Water","Range bag"],
+  hunt:["Firearm","Ammo","Hunting license","Tag","Binoculars","Rangefinder","Knife","Game bags","Rope","Orange vest","First aid kit","Water","Food/snacks","Flashlight","Extra batteries","Rain gear","GPS/phone","Emergency blanket"],
+};
+
+function GearChecklists(){
+  const [tab,setTab]=useState("range");
+  const [items,setItems]=useState({range:DEFAULT_LISTS.range.map((t,i)=>({id:i,text:t,checked:false})),hunt:DEFAULT_LISTS.hunt.map((t,i)=>({id:i,text:t,checked:false}))});
+  const [newItem,setNewItem]=useState("");
+
+  function toggle(id){setItems(v=>({...v,[tab]:v[tab].map(it=>it.id===id?{...it,checked:!it.checked}:it)}));}
+  function addItem(){if(!newItem.trim())return;setItems(v=>({...v,[tab]:[...v[tab],{id:uid(),text:newItem.trim(),checked:false}]}));setNewItem("");}
+  function removeItem(id){setItems(v=>({...v,[tab]:v[tab].filter(it=>it.id!==id)}));}
+  function resetAll(){setItems(v=>({...v,[tab]:v[tab].map(it=>({...it,checked:false}))}))}
+
+  const list=items[tab];
+  const done=list.filter(i=>i.checked).length;
+
+  return(
+    <div>
+      <div style={{display:"flex",gap:8,marginBottom:16,background:"#2c2c2e",borderRadius:12,padding:4}}>
+        {[["range","🎯 Range Bag"],["hunt","🦌 Hunt Pack"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"9px",borderRadius:9,border:"none",background:tab===k?"#ff9f0a":"transparent",color:tab===k?"#000":"#8e8e93",fontWeight:700,fontSize:14}}>{l}</button>
+        ))}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <span style={{color:"#8e8e93",fontSize:14}}>{done} / {list.length} packed</span>
+        <button onClick={resetAll} style={{background:"none",border:"none",color:"#ff9f0a",fontSize:14,fontWeight:600}}>Reset All</button>
+      </div>
+      <div style={{height:6,background:"#2c2c2e",borderRadius:3,overflow:"hidden",marginBottom:16}}>
+        <div style={{height:"100%",width:`${list.length?(done/list.length)*100:0}%`,background:"#30d158",borderRadius:3,transition:"width 0.3s"}}/>
+      </div>
+      {list.map(item=>(
+        <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 0",borderBottom:"1px solid #2c2c2e"}}>
+          <div onClick={()=>toggle(item.id)} style={{width:22,height:22,borderRadius:6,border:`2px solid ${item.checked?"#30d158":"#48484a"}`,background:item.checked?"#30d158":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+            {item.checked&&<ICheck/>}
+          </div>
+          <span style={{flex:1,color:item.checked?"#636366":"#fff",fontSize:15,textDecoration:item.checked?"line-through":"none"}}>{item.text}</span>
+          <button onClick={()=>removeItem(item.id)} style={{background:"none",border:"none",color:"#48484a",cursor:"pointer",padding:4}}><IX/></button>
+        </div>
+      ))}
+      <div style={{display:"flex",gap:10,marginTop:16}}>
+        <input type="text" value={newItem} onChange={e=>setNewItem(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addItem()} placeholder="Add item…" style={{flex:1,background:"#2c2c2e",border:"none",borderRadius:12,padding:"12px 16px",color:"#fff",fontSize:15,outline:"none"}}/>
+        <button onClick={addItem} style={{background:"#ff9f0a",border:"none",borderRadius:12,padding:"12px 18px",color:"#000",fontWeight:700,fontSize:15}}>Add</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Master Range Log ──────────────────────────────────────────────────────────
+function MasterRangeLog({sessions,zeros,maintenance,guns,ammo,onAddSession,onAddZero,onAddMaint}){
+  const [tab,setTab]=useState("sessions");
+  return(
+    <div>
+      <div style={{display:"flex",gap:6,marginBottom:16,background:"#2c2c2e",borderRadius:12,padding:4}}>
+        {[["sessions","Sessions"],["zeros","Zeros"],["maintenance","Maintenance"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"9px",borderRadius:9,border:"none",background:tab===k?"#ff9f0a":"transparent",color:tab===k?"#000":"#8e8e93",fontWeight:700,fontSize:13}}>{l}</button>
+        ))}
+      </div>
+      {tab==="sessions"&&(
+        <div>
+          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+            <button onClick={onAddSession} style={{background:"#30d15822",border:"1px solid #30d15844",borderRadius:10,padding:"8px 16px",color:"#30d158",fontSize:14,fontWeight:600}}>+ Log Session</button>
+          </div>
+          {sessions.length===0?<div style={{textAlign:"center",color:"#48484a",padding:"40px 0"}}>No sessions logged yet</div>:sessions.sort((a,b)=>b.date>a.date?1:-1).map(sess=>{
+            const g=guns.find(x=>x.id==sess.gunId);
+            const a=ammo.find(x=>x.id==sess.ammoId);
+            return(
+              <div key={sess.id} className="card" style={{flexDirection:"column",alignItems:"flex-start",gap:6}}>
+                <div style={{display:"flex",justifyContent:"space-between",width:"100%"}}>
+                  <span style={{color:"#fff",fontWeight:700,fontSize:15}}>{sess.location||"Range Session"}</span>
+                  <span style={{color:"#636366",fontSize:13}}>{sess.date}</span>
+                </div>
+                {g&&<div style={{color:"#ff9f0a",fontSize:13}}>{g.manufacturer} {g.model}</div>}
+                <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                  {sess.roundsFired&&<span style={{color:"#30d158",fontSize:13}}>{sess.roundsFired} rds</span>}
+                  {sess.distance&&<span style={{color:"#8e8e93",fontSize:13}}>{sess.distance} yds</span>}
+                  {sess.weatherCondition&&<span style={{color:"#8e8e93",fontSize:13}}>{sess.weatherCondition} {sess.weatherTemp&&`${sess.weatherTemp}°F`} {sess.weatherWind&&`${sess.weatherWind}mph`}</span>}
+                </div>
+                {a&&<div style={{color:"#8e8e93",fontSize:12}}>{a.manufacturer} {a.caliber} {a.grains}gr {a.ammoType}</div>}
+                {sess.notes&&<div style={{color:"#636366",fontSize:12}}>{sess.notes}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {tab==="zeros"&&(
+        <div>
+          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+            <button onClick={onAddZero} style={{background:"#0a84ff22",border:"1px solid #0a84ff44",borderRadius:10,padding:"8px 16px",color:"#0a84ff",fontSize:14,fontWeight:600}}>+ Log Zero</button>
+          </div>
+          {zeros.length===0?<div style={{textAlign:"center",color:"#48484a",padding:"40px 0"}}>No zeros logged yet</div>:zeros.sort((a,b)=>b.date>a.date?1:-1).map(z=>{
+            const g=guns.find(x=>x.id==z.gunId);
+            const a=ammo.find(x=>x.id==z.ammoId);
+            return(
+              <div key={z.id} className="card" style={{flexDirection:"column",alignItems:"flex-start",gap:6}}>
+                <div style={{display:"flex",justifyContent:"space-between",width:"100%"}}>
+                  <span style={{color:"#fff",fontWeight:700,fontSize:15}}>{z.zeroDistance} yds zero</span>
+                  <span style={{color:"#636366",fontSize:13}}>{z.date}</span>
+                </div>
+                {g&&<div style={{color:"#ff9f0a",fontSize:13}}>{g.manufacturer} {g.model}</div>}
+                {a&&<div style={{color:"#8e8e93",fontSize:13}}>{a.manufacturer} {a.caliber} {a.grains}gr</div>}
+                {z.notes&&<div style={{color:"#636366",fontSize:12}}>{z.notes}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {tab==="maintenance"&&(
+        <div>
+          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+            <button onClick={onAddMaint} style={{background:"#ff9f0a22",border:"1px solid #ff9f0a44",borderRadius:10,padding:"8px 16px",color:"#ff9f0a",fontSize:14,fontWeight:600}}>+ Log Maintenance</button>
+          </div>
+          {maintenance.length===0?<div style={{textAlign:"center",color:"#48484a",padding:"40px 0"}}>No maintenance logged yet</div>:maintenance.sort((a,b)=>b.date>a.date?1:-1).map(m=>{
+            const g=guns.find(x=>x.id==m.gunId);
+            return(
+              <div key={m.id} className="card" style={{flexDirection:"column",alignItems:"flex-start",gap:6}}>
+                <div style={{display:"flex",justifyContent:"space-between",width:"100%"}}>
+                  <span style={{color:"#fff",fontWeight:700,fontSize:15}}>{m.type||"Maintenance"}</span>
+                  <span style={{color:"#636366",fontSize:13}}>{m.date}</span>
+                </div>
+                {g&&<div style={{color:"#ff9f0a",fontSize:13}}>{g.manufacturer} {g.model}</div>}
+                {m.roundsSinceLast&&<div style={{color:"#8e8e93",fontSize:13}}>{m.roundsSinceLast} rds since last clean</div>}
+                {m.parts&&<div style={{color:"#8e8e93",fontSize:12}}>Parts: {m.parts}</div>}
+                {m.notes&&<div style={{color:"#636366",fontSize:12}}>{m.notes}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Inventory Row ─────────────────────────────────────────────────────────────
+function Row({item,onClick,extra}){
+  const isGun=item.type==="firearm",isAcc=item.type==="accessory";
+  const thumb=item.images?.[0];
+  return(
+    <div className="card" onClick={onClick}>
+      <div style={{width:58,height:58,borderRadius:13,background:thumb?"transparent":"#2c2c2e",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:isGun?"#ff9f0a":isAcc?"#bf5af2":"#ff6b0a",opacity:thumb?1:0.6}}>
+        {thumb?<img src={thumb} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:isGun?<IGun/>:isAcc?<IWrench/>:<IBullet/>}
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{color:"#fff",fontWeight:600,fontSize:16,marginBottom:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.manufacturer} {item.model||""}</div>
+        <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
+          {isAcc&&item.category&&<AccBadge category={item.category}/>}
+          {isAcc&&<span style={{color:"#636366",fontSize:13}}>{extra||"Unassigned"}</span>}
+          {!isAcc&&<span style={{color:"#8e8e93",fontSize:13}}>{item.caliber}{isGun&&item.serialNumber?` · S/N: ${item.serialNumber}`:""}{!isGun&&item.quantity?` · ${item.quantity} rds`:""}</span>}
+        </div>
+      </div>
+      {item.purchasePrice&&<span style={{color:"#636366",fontSize:13,flexShrink:0}}>{fmtP(item.purchasePrice)}</span>}
+      <div style={{color:"#48484a"}}><IChev/></div>
+    </div>
+  );
+}
+
+// ── Nav Sections ──────────────────────────────────────────────────────────────
+const NAV=[
+  {key:"firearms",label:"Firearms",module:"inventory"},
+  {key:"ammo",label:"Ammunition",module:"inventory"},
+  {key:"accessories",label:"Accessories",module:"inventory"},
+  {key:"range",label:"Range Sessions",module:"range"},
+  {key:"pbz",label:"PBZ Calculator",module:"pbz"},
+  {key:"zeros",label:"Zero Log",module:"zeros"},
+  {key:"maintenance",label:"Maintenance",module:"maintenance"},
+  {key:"games",label:"Shooting Games",module:"games"},
+  {key:"hunting",label:"Hunt Log",module:"hunting"},
+  {key:"gear",label:"Gear Checklists",module:"gear"},
+  {key:"reloading",label:"Load Data",module:"reloading"},
+  {key:"settings",label:"Settings",module:null},
+];
+
+// ── Main App ──────────────────────────────────────────────────────────────────
+function App(){
+  const [tab,setTab]=useState("firearms");
+  const [guns,setGuns]=useState(SAMPLE_GUNS);
+  const [ammo,setAmmo]=useState(SAMPLE_AMMO);
+  const [acc,setAcc]=useState(SAMPLE_ACC);
+  const [rangeSessions,setRangeSessions]=useState([]);
+  const [zeros,setZeros]=useState([]);
+  const [maintenance,setMaintenance]=useState([]);
+  const [loads,setLoads]=useState([]);
+  const [hunts,setHunts]=useState([]);
+  const [settings,setSettings]=useState(DEFAULT_SETTINGS);
+  const [search,setSearch]=useState("");
+  const [modal,setModal]=useState(null);
+  const [sel,setSel]=useState(null);
+  const [showAdd,setShowAdd]=useState(false);
+  const [showExport,setShowExport]=useState(false);
+
+  const [calibers,setCalibersL]=useState(CALIBERS);
+  const [gunTypes,setGunTypesL]=useState(GUN_TYPES);
+  const [actions,setActionsL]=useState(ACTIONS);
+  const [mfgGuns,setMfgGunsL]=useState(MFG_GUNS);
+  const [mfgAmmo,setMfgAmmoL]=useState(MFG_AMMO);
+  const [mfgAcc,setMfgAccL]=useState(MFG_ACC);
+  const [ammoTypes,setAmmoTypesL]=useState(AMMO_TYPES);
+  const [accCats,setAccCatsL]=useState(ACC_CATS);
+  function addTo(fn){return v=>fn(p=>p.includes(v)?p:[...p,v]);}
+  const lists={calibers,gunTypes,actions,mfgGuns,mfgAmmo,mfgAcc,ammoTypes,accCats,addCaliber:addTo(setCalibersL),addGunType:addTo(setGunTypesL),addAction:addTo(setActionsL),addMfgGun:addTo(setMfgGunsL),addMfgAmmo:addTo(setMfgAmmoL),addMfgAcc:addTo(setMfgAccL),addAmmoType:addTo(setAmmoTypesL),addAccCat:addTo(setAccCatsL)};
+
+  const totalRounds=ammo.reduce((s,a)=>s+(parseInt(a.quantity)||0),0);
+  const totalInvested=[...guns,...ammo,...acc].reduce((s,x)=>s+(parseFloat(x.purchasePrice)||0),0);
+  const q=search.toLowerCase();
+  const fGuns=guns.filter(g=>`${g.manufacturer} ${g.model} ${g.serialNumber} ${g.caliber}`.toLowerCase().includes(q));
+  const fAmmo=ammo.filter(a=>`${a.manufacturer} ${a.caliber} ${a.ammoType}`.toLowerCase().includes(q));
+  const fAcc=acc.filter(a=>`${a.manufacturer} ${a.model} ${a.category}`.toLowerCase().includes(q));
+
+  function saveGun(f){if(modal==="editGun")setGuns(gs=>gs.map(g=>g.id===sel.id?{...g,...f}:g));else setGuns(gs=>[...gs,{...f,id:uid(),type:"firearm",dateAdded:nowDate(),roundCount:0}]);setModal(null);}
+  function saveAmmo(f){if(modal==="editAmmo")setAmmo(as=>as.map(a=>a.id===sel.id?{...a,...f}:a));else setAmmo(as=>[...as,{...f,id:uid(),type:"ammo",dateAdded:nowDate()}]);setModal(null);}
+  function saveAcc(f){
+    if(modal==="editAcc"){setAcc(as=>as.map(a=>a.id===sel.id?{...a,...f}:a));setModal(null);return;}
+    setAcc(as=>[...as,{...f,id:uid(),type:"accessory",dateAdded:nowDate()}]);
+    setModal(null);setSel(null);
+  }
+  function saveSession(f){
+    if(modal==="editSession")setRangeSessions(ss=>ss.map(s=>s.id===sel.id?{...s,...f}:s));
+    else{
+      setRangeSessions(ss=>[...ss,{...f,id:uid(),dateAdded:nowDate()}]);
+      // deduct ammo
+      if(f.ammoId&&f.roundsFired){setAmmo(as=>as.map(a=>a.id==f.ammoId?{...a,quantity:Math.max(0,(parseInt(a.quantity)||0)-(parseInt(f.roundsFired)||0))}:a));}
+      // add rounds to gun
+      if(f.gunId&&f.roundsFired){setGuns(gs=>gs.map(g=>g.id==f.gunId?{...g,roundCount:(g.roundCount||0)+(parseInt(f.roundsFired)||0)}:g));}
+    }
+    setModal(null);setSel(null);
+  }
+  function saveZero(f){if(modal==="editZero")setZeros(zs=>zs.map(z=>z.id===sel.id?{...z,...f}:z));else setZeros(zs=>[...zs,{...f,id:uid(),dateAdded:nowDate()}]);setModal(null);setSel(null);}
+  function saveMaint(f){if(modal==="editMaint")setMaintenance(ms=>ms.map(m=>m.id===sel.id?{...m,...f}:m));else setMaintenance(ms=>[...ms,{...f,id:uid(),dateAdded:nowDate()}]);setModal(null);setSel(null);}
+  function saveLoad(f){if(modal==="editLoad")setLoads(ls=>ls.map(l=>l.id===sel.id?{...l,...f}:l));else setLoads(ls=>[...ls,{...f,id:uid(),dateAdded:nowDate()}]);setModal(null);setSel(null);}
+  function saveHunt(f){if(modal==="editHunt")setHunts(hs=>hs.map(h=>h.id===sel.id?{...h,...f}:h));else setHunts(hs=>[...hs,{...f,id:uid(),dateAdded:nowDate()}]);setModal(null);setSel(null);}
+
+  function del(){
+    const t=sel.type;
+    if(t==="firearm"){setGuns(gs=>gs.filter(g=>g.id!==sel.id));setAcc(as=>as.map(a=>a.gunId===sel.id?{...a,gunId:null}:a));}
+    else if(t==="ammo")setAmmo(as=>as.filter(a=>a.id!==sel.id));
+    else if(t==="accessory")setAcc(as=>as.filter(a=>a.id!==sel.id));
+    else if(t==="session")setRangeSessions(ss=>ss.filter(s=>s.id!==sel.id));
+    else if(t==="zero")setZeros(zs=>zs.filter(z=>z.id!==sel.id));
+    else if(t==="maint")setMaintenance(ms=>ms.filter(m=>m.id!==sel.id));
+    else if(t==="load")setLoads(ls=>ls.filter(l=>l.id!==sel.id));
+    else if(t==="hunt")setHunts(hs=>hs.filter(h=>h.id!==sel.id));
+    setModal(null);setSel(null);
+  }
+
+  const visibleNav=NAV.filter(n=>n.module===null||settings.modules[n.module]!==false);
+
+  function exportPDF(guns,ammo,acc){
+    const date=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+    const tG=guns.reduce((s,g)=>s+(parseFloat(g.purchasePrice)||0),0);
+    const tA=ammo.reduce((s,a)=>s+(parseFloat(a.purchasePrice)||0),0);
+    const tAc=acc.reduce((s,a)=>s+(parseFloat(a.purchasePrice)||0),0);
+    const tR=ammo.reduce((s,a)=>s+(parseInt(a.quantity)||0),0);
+    const fr=(l,v)=>v?`<tr><td style="padding:6px 12px;color:#888;width:36%;border-bottom:1px solid #f0f0f0;font-size:12px;font-weight:500">${l}</td><td style="padding:6px 12px;color:#111;font-weight:600;border-bottom:1px solid #f0f0f0;font-size:12px">${v}</td></tr>`:"";
+    const card=(title,tag,rows,note)=>`<div style="background:#fafafa;border:1px solid #e5e5ea;border-radius:12px;overflow:hidden;break-inside:avoid;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-bottom:1px solid #f0f0f0"><b style="font-size:13px">${title}</b><span style="font-size:9px;font-weight:700;text-transform:uppercase;background:#1c1c1e;color:#ff9f0a;padding:2px 8px;border-radius:20px">${tag}</span></div><table style="width:100%;border-collapse:collapse">${rows}</table>${note?`<div style="padding:8px 12px;font-size:11px;color:#888;border-top:1px solid #f0f0f0">${note}</div>`:""}</div>`;
+    const gCards=guns.map(g=>{const ga=acc.filter(a=>a.gunId===g.id);return card(`${g.manufacturer} ${g.model||""}`,g.caliber,[fr("Gun Type",g.gunType),fr("Action",g.action),fr("Serial #",g.serialNumber),fr("Finish",g.finish),fr("Purchased",g.purchaseDate),fr("Price",g.purchasePrice?fmtP(g.purchasePrice):"")].join(""),ga.length?`Accessories: ${ga.map(a=>`${a.category}: ${a.manufacturer} ${a.model}`).join(", ")}`:null);}).join("");
+    const aCards=ammo.map(a=>card(`${a.manufacturer} ${a.caliber}`,a.ammoType||"Ammo",[fr("Grain",a.grains?`${a.grains}gr`:""),fr("Type",a.ammoType),fr("Quantity",a.quantity?`${a.quantity} rds`:""),fr("Purchased",a.purchaseDate),fr("Price",a.purchasePrice?fmtP(a.purchasePrice):"")].join(""),a.notes||null)).join("");
+    const acCards=acc.map(a=>{const g=guns.find(x=>x.id===a.gunId);return card(`${a.manufacturer} ${a.model||""}`,a.category||"Accessory",[fr("Assigned To",g?gLabel(g):"Unassigned"),fr("Serial #",a.serialNumber),fr("Purchased",a.purchaseDate),fr("Price",a.purchasePrice?fmtP(a.purchasePrice):"")].join(""),a.notes||null);}).join("");
+    const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Collection of the 2nd</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,Helvetica,Arial,sans-serif;padding:36px;background:#fff;color:#111}h2{font-size:14px;font-weight:700;margin:0 0 12px;padding-bottom:6px;border-bottom:2px solid #ff9f0a}section{margin-bottom:24px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}@media print{.grid{grid-template-columns:repeat(2,1fr)}}</style></head><body>
+    <div style="border-bottom:3px solid #ff9f0a;padding-bottom:12px;margin-bottom:18px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#ff9f0a">Collection of the 2nd</div><div style="font-size:24px;font-weight:800;margin:3px 0">Inventory Report</div><div style="font-size:12px;color:#888">Generated ${date}</div></div>
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">${[["Firearms",guns.length],["Ammo Types",ammo.length],["Accessories",acc.length],["Total Rounds",tR>=1000?(tR/1000).toFixed(1)+"k":tR],["Total Invested","$"+(tG+tA+tAc).toFixed(0)]].map(([l,v])=>`<div style="background:#f5f5f7;border-radius:10px;padding:10px 14px"><div style="font-size:18px;font-weight:800;color:#ff9f0a">${v}</div><div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;margin-top:2px">${l}</div></div>`).join("")}</div>
+    ${guns.length?`<section><h2>Firearms (${guns.length})</h2><div class="grid">${gCards}</div></section>`:""}
+    ${ammo.length?`<section><h2>Ammunition (${ammo.length})</h2><div class="grid">${aCards}</div></section>`:""}
+    ${acc.length?`<section><h2>Accessories (${acc.length})</h2><div class="grid">${acCards}</div></section>`:""}
+    <div style="margin-top:20px;padding-top:12px;border-top:1px solid #e5e5ea;font-size:10px;color:#aaa;text-align:center">Collection of the 2nd &middot; ${date}</div>
+    </body></html>`;
+    const w=window.open("","_blank","width=900,height=700");
+    if(!w){alert("Allow popups to export PDF.");return;}
+    w.document.write(html);w.document.close();w.setTimeout(()=>{w.focus();w.print();},700);
+  }
+
+  function exportCSV(){
+    const esc=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+    const h=["Type","Manufacturer","Model","Caliber","Serial","Date","Price","Qty","Notes"].map(esc).join(",");
+    const gr=guns.map(g=>["Firearm",g.manufacturer,g.model||"",g.caliber||"",g.serialNumber||"",g.purchaseDate||"",g.purchasePrice?fmtP(g.purchasePrice):"","",g.notes||""].map(esc).join(","));
+    const ar=ammo.map(a=>["Ammo",a.manufacturer,a.caliber||"",a.caliber||"","",a.purchaseDate||"",a.purchasePrice?fmtP(a.purchasePrice):"",a.quantity||"",a.notes||""].map(esc).join(","));
+    const acr=acc.map(a=>{const g=guns.find(x=>x.id===a.gunId);return["Accessory",a.manufacturer,a.model||"",a.category||"",a.serialNumber||"",a.purchaseDate||"",a.purchasePrice?fmtP(a.purchasePrice):"","",`Assigned: ${g?gLabel(g):"Unassigned"} ${a.notes||""}`].map(esc).join(",");});
+    const blob=new Blob([[h,...gr,...ar,...acr].join("\n")],{type:"text/csv"});
+    const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download="collection_of_the_2nd.csv";a.click();URL.revokeObjectURL(u);
+  }
+
+  const renderContent=()=>{
+    if(tab==="settings")return <SettingsView settings={settings} onSave={s=>{setSettings(s);}}/>;
+    if(tab==="pbz")return <PBZCalculator units={settings.units}/>;
+    if(tab==="games")return <GamesView/>;
+    if(tab==="gear")return <GearChecklists/>;
+      if(tab==="range") return (
+      <div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+          <button onClick={()=>setModal("addSession")} style={{background:"#30d15822",border:"1px solid #30d15844",borderRadius:10,padding:"8px 16px",color:"#30d158",fontSize:14,fontWeight:600}}>+ Log Session</button>
+        </div>
+        {rangeSessions.length===0
+          ?<div style={{textAlign:"center",color:"#48484a",padding:"60px 0",fontSize:15}}>No sessions logged yet</div>
+          :rangeSessions.sort((a,b)=>b.date>a.date?1:-1).map(sess=>{
+            const g=guns.find(x=>x.id==sess.gunId);
+            const a=ammo.find(x=>x.id==sess.ammoId);
+            return(
+              <div key={sess.id} className="card" style={{flexDirection:"column",alignItems:"flex-start",gap:6}}>
+                <div style={{display:"flex",justifyContent:"space-between",width:"100%"}}>
+                  <span style={{color:"#fff",fontWeight:700,fontSize:15}}>{sess.location||"Range Session"}</span>
+                  <span style={{color:"#636366",fontSize:13}}>{sess.date}</span>
+                </div>
+                {g&&<div style={{color:"#ff9f0a",fontSize:13}}>{g.manufacturer} {g.model}</div>}
+                <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                  {sess.roundsFired&&<span style={{color:"#30d158",fontSize:13}}>{sess.roundsFired} rds</span>}
+                  {sess.distance&&<span style={{color:"#8e8e93",fontSize:13}}>{sess.distance} yds</span>}
+                  {sess.weatherCondition&&<span style={{color:"#8e8e93",fontSize:13}}>{sess.weatherCondition}{sess.weatherTemp?` · ${sess.weatherTemp}°F`:""}{sess.weatherWind?` · ${sess.weatherWind}mph`:""}</span>}
+                </div>
+                {a&&<div style={{color:"#8e8e93",fontSize:12}}>{a.manufacturer} {a.caliber} {a.grains}gr {a.ammoType}</div>}
+                {sess.notes&&<div style={{color:"#636366",fontSize:12}}>{sess.notes}</div>}
+              </div>
+            );
+          })
+        }
+      </div>
+    );
+    if(tab==="zeros") return (
+      <div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+          <button onClick={()=>setModal("addZero")} style={{background:"#0a84ff22",border:"1px solid #0a84ff44",borderRadius:10,padding:"8px 16px",color:"#0a84ff",fontSize:14,fontWeight:600}}>+ Log Zero</button>
+        </div>
+        {zeros.length===0
+          ?<div style={{textAlign:"center",color:"#48484a",padding:"60px 0",fontSize:15}}>No zeros logged yet</div>
+          :zeros.sort((a,b)=>b.date>a.date?1:-1).map(z=>{
+            const g=guns.find(x=>x.id==z.gunId);
+            const a=ammo.find(x=>x.id==z.ammoId);
+            return(
+              <div key={z.id} className="card" style={{flexDirection:"column",alignItems:"flex-start",gap:6}}>
+                <div style={{display:"flex",justifyContent:"space-between",width:"100%"}}>
+                  <span style={{color:"#fff",fontWeight:700,fontSize:15}}>{z.zeroDistance} yds zero</span>
+                  <span style={{color:"#636366",fontSize:13}}>{z.date}</span>
+                </div>
+                {g&&<div style={{color:"#ff9f0a",fontSize:13}}>{g.manufacturer} {g.model}</div>}
+                {a&&<div style={{color:"#8e8e93",fontSize:13}}>{a.manufacturer} {a.caliber} {a.grains}gr</div>}
+                {z.scopeHeight&&<div style={{color:"#8e8e93",fontSize:12}}>Scope height: {z.scopeHeight}"</div>}
+                {z.notes&&<div style={{color:"#636366",fontSize:12}}>{z.notes}</div>}
+              </div>
+            );
+          })
+        }
+      </div>
+    );
+    if(tab==="maintenance") return (
+      <div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+          <button onClick={()=>setModal("addMaint")} style={{background:"#ff9f0a22",border:"1px solid #ff9f0a44",borderRadius:10,padding:"8px 16px",color:"#ff9f0a",fontSize:14,fontWeight:600}}>+ Log Maintenance</button>
+        </div>
+        {maintenance.length===0
+          ?<div style={{textAlign:"center",color:"#48484a",padding:"60px 0",fontSize:15}}>No maintenance logged yet</div>
+          :maintenance.sort((a,b)=>b.date>a.date?1:-1).map(m=>{
+            const g=guns.find(x=>x.id==m.gunId);
+            return(
+              <div key={m.id} className="card" style={{flexDirection:"column",alignItems:"flex-start",gap:6}}>
+                <div style={{display:"flex",justifyContent:"space-between",width:"100%"}}>
+                  <span style={{color:"#fff",fontWeight:700,fontSize:15}}>{m.type||"Maintenance"}</span>
+                  <span style={{color:"#636366",fontSize:13}}>{m.date}</span>
+                </div>
+                {g&&<div style={{color:"#ff9f0a",fontSize:13}}>{g.manufacturer} {g.model}</div>}
+                {m.roundsSinceLast&&<div style={{color:"#8e8e93",fontSize:13}}>{m.roundsSinceLast} rds since last clean</div>}
+                {m.parts&&<div style={{color:"#8e8e93",fontSize:12}}>Parts: {m.parts}</div>}
+                {m.notes&&<div style={{color:"#636366",fontSize:12}}>{m.notes}</div>}
+              </div>
+            );
+          })
+        }
+      </div>
+    );
+    if(tab==="hunting")return(
+      <div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+          <button onClick={()=>setModal("addHunt")} style={{background:"#ac8e6822",border:"1px solid #ac8e6844",borderRadius:10,padding:"8px 16px",color:"#ac8e68",fontSize:14,fontWeight:600}}>+ Log Hunt</button>
+        </div>
+        {hunts.length===0?<div style={{textAlign:"center",color:"#48484a",padding:"60px 0",fontSize:15}}>No hunts logged yet</div>:hunts.sort((a,b)=>b.date>a.date?1:-1).map(h=>{
+          const g=guns.find(x=>x.id==h.gunId);
+          return(
+            <div key={h.id} className="card" style={{flexDirection:"column",alignItems:"flex-start",gap:6}}>
+              <div style={{display:"flex",justifyContent:"space-between",width:"100%"}}>
+                <span style={{color:"#fff",fontWeight:700,fontSize:15}}>{h.species||"Hunt"}</span>
+                <span style={{color:h.outcome==="Harvested"?"#30d158":h.outcome==="Missed"?"#ff453a":"#636366",fontSize:13,fontWeight:600}}>{h.outcome}</span>
+              </div>
+              <div style={{color:"#8e8e93",fontSize:13}}>{h.location}{h.distance?` · ${h.distance} yds`:""}</div>
+              {g&&<div style={{color:"#ff9f0a",fontSize:13}}>{g.manufacturer} {g.model}</div>}
+              <div style={{color:"#636366",fontSize:12}}>{h.date}{h.weatherCondition&&` · ${h.weatherCondition}`}{h.weatherTemp&&` ${h.weatherTemp}°F`}</div>
+              {h.notes&&<div style={{color:"#636666",fontSize:12}}>{h.notes}</div>}
+            </div>
+          );
+        })}
+      </div>
+    );
+    if(tab==="reloading")return(
+      <div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+          <button onClick={()=>setModal("addLoad")} style={{background:"#5e5ce622",border:"1px solid #5e5ce644",borderRadius:10,padding:"8px 16px",color:"#5e5ce6",fontSize:14,fontWeight:600}}>+ Add Load</button>
+        </div>
+        {loads.length===0?<div style={{textAlign:"center",color:"#48484a",padding:"60px 0",fontSize:15}}>No loads saved yet</div>:loads.map(l=>(
+          <div key={l.id} className="card" style={{flexDirection:"column",alignItems:"flex-start",gap:6}}>
+            <div style={{display:"flex",justifyContent:"space-between",width:"100%"}}>
+              <span style={{color:"#fff",fontWeight:700,fontSize:15}}>{l.name||l.caliber}</span>
+              <span style={{color:"#5e5ce6",fontSize:13,fontWeight:600}}>{l.caliber}</span>
+            </div>
+            <div style={{color:"#8e8e93",fontSize:13}}>{l.bullet} {l.bulletWeight}gr — {l.powder} {l.charge}gr</div>
+            {l.primer&&<div style={{color:"#8e8e93",fontSize:12}}>Primer: {l.primer}</div>}
+            {l.accuracy&&<div style={{color:"#30d158",fontSize:12}}>{l.accuracy}</div>}
+            {l.notes&&<div style={{color:"#636366",fontSize:12}}>{l.notes}</div>}
+          </div>
+        ))}
+      </div>
+    );
+    // Inventory tabs
+    return(
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(330px,1fr))",gap:10}}>
+        {tab==="firearms"&&(fGuns.length===0
+          ?<div style={{gridColumn:"1/-1",textAlign:"center",color:"#48484a",marginTop:80,fontSize:16}}>No firearms found</div>
+          :fGuns.map(g=><Row key={g.id} item={g} onClick={()=>{setSel(g);setModal("gunProfile");}}/>)
+        )}
+        {tab==="ammo"&&(fAmmo.length===0
+          ?<div style={{gridColumn:"1/-1",textAlign:"center",color:"#48484a",marginTop:80,fontSize:16}}>No ammo found</div>
+          :fAmmo.map(a=><Row key={a.id} item={a} onClick={()=>{setSel(a);setModal("detailAmmo");}}/>)
+        )}
+        {tab==="accessories"&&(fAcc.length===0
+          ?<div style={{gridColumn:"1/-1",textAlign:"center",color:"#48484a",marginTop:80,fontSize:16}}>No accessories found</div>
+          :fAcc.map(a=>{const g=guns.find(x=>x.id===a.gunId);return<Row key={a.id} item={a} extra={g?gLabel(g):"Unassigned"} onClick={()=>{setSel(a);setModal("detailAcc");}}/>;})
+        )}
+      </div>
+    );
+  };
+
+  return(
+    <div style={{height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {/* Nav bar */}
+      <div style={{background:"#1c1c1e",borderBottom:"1px solid #2c2c2e",padding:"0 28px",display:"flex",alignItems:"center",gap:16,height:62,flexShrink:0}}>
+        <div>
+          <div style={{color:"#ff9f0a",fontSize:10,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase"}}>Collection of the 2nd</div>
+          <div style={{color:"#fff",fontSize:15,fontWeight:700,marginTop:1}}>Hunting & Range App</div>
+        </div>
+        <div style={{flex:1}}/>
+        <div style={{background:"#2c2c2e",borderRadius:11,display:"flex",alignItems:"center",padding:"8px 14px",gap:9,width:260,border:"1px solid #3a3a3c"}}>
+          <div style={{color:"#636366"}}><ISearch/></div>
+          <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search…" style={{background:"none",border:"none",color:"#fff",fontSize:14,outline:"none",flex:1,padding:0,borderRadius:0}}/>
+        </div>
+        <div style={{position:"relative"}}>
+          <button onClick={()=>setShowExport(v=>!v)} style={{background:"#2c2c2e",border:"1px solid #3a3a3c",borderRadius:11,padding:"8px 16px",color:"#ff9f0a",fontSize:13,fontWeight:600}}>
+            Export
+          </button>
+          {showExport&&(
+            <div style={{position:"absolute",top:"calc(100% + 7px)",right:0,background:"#1c1c1e",border:"1px solid #3a3a3c",borderRadius:14,overflow:"hidden",zIndex:300,minWidth:160,boxShadow:"0 8px 28px rgba(0,0,0,0.7)"}}>
+              <div onClick={()=>{exportPDF(guns,ammo,acc);setShowExport(false);}} style={{padding:"13px 18px",color:"#fff",fontSize:14,cursor:"pointer",borderBottom:"1px solid #2c2c2e"}}>Export as PDF</div>
+              <div onClick={()=>{exportCSV();setShowExport(false);}} style={{padding:"13px 18px",color:"#fff",fontSize:14,cursor:"pointer"}}>Export as CSV</div>
+            </div>
+          )}
+        </div>
+        <div style={{position:"relative"}}>
+          <button onClick={()=>setShowAdd(v=>!v)} style={{background:"#ff9f0a",border:"none",borderRadius:11,padding:"8px 16px",color:"#000",fontSize:13,fontWeight:700}}>
+            + Add
+          </button>
+          {showAdd&&(
+            <div style={{position:"absolute",top:"calc(100% + 7px)",right:0,background:"#1c1c1e",border:"1px solid #3a3a3c",borderRadius:14,overflow:"hidden",zIndex:300,minWidth:190,boxShadow:"0 8px 28px rgba(0,0,0,0.7)"}}>
+              {[["Firearm","addGun"],["Ammo","addAmmo"],["Accessory","addAcc"],["Range Session","addSession"],["Zero","addZero"],["Maintenance","addMaint"],["Hunt","addHunt"],["Load Data","addLoad"]].map(([l,m],i,arr)=>(
+                <div key={m} onClick={()=>{setSel(null);setModal(m);setShowAdd(false);}} style={{padding:"12px 18px",color:"#fff",fontSize:14,cursor:"pointer",borderBottom:i<arr.length-1?"1px solid #2c2c2e":"none"}}>{l}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{display:"flex",flex:1,overflow:"hidden"}}>
+        {/* Sidebar */}
+        <div style={{width:230,background:"#111",borderRight:"1px solid #2c2c2e",padding:"16px 12px",display:"flex",flexDirection:"column",flexShrink:0,overflowY:"auto"}}>
+          {/* Stats */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:12}}>
+            {[["Guns",guns.length,"#ff9f0a"],["Rounds",totalRounds>=1000?`${(totalRounds/1000).toFixed(1)}k`:totalRounds,"#ff9f0a"],["Invested",fmtK(totalInvested),"#30d158"],["Sessions",rangeSessions.length,"#0a84ff"]].map(([l,v,c])=>(
+              <div key={l} style={{background:"#1c1c1e",borderRadius:12,padding:"11px 10px"}}>
+                <div style={{color:c,fontSize:18,fontWeight:800}}>{v}</div>
+                <div style={{color:"#636366",fontSize:10,fontWeight:600,marginTop:1}}>{l.toUpperCase()}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{height:1,background:"#2c2c2e",marginBottom:10}}/>
+          {/* Nav */}
+          {visibleNav.map(({key,label})=>(
+            <button key={key} className={`nav-btn${tab===key?" active":""}`} onClick={()=>setTab(key)}>
+              <span style={{flex:1}}>{label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div style={{flex:1,overflowY:"auto",padding:"22px 28px"}}>
+          {renderContent()}
+        </div>
+      </div>
+
+      {(showAdd||showExport)&&<div onClick={()=>{setShowAdd(false);setShowExport(false);}} style={{position:"fixed",inset:0,zIndex:290}}/>}
+
+      {/* Modals */}
+      {modal==="addGun"      &&<GunForm onSave={saveGun} onClose={()=>setModal(null)} lists={lists}/>}
+      {modal==="editGun"     &&sel&&<GunForm initial={sel} onSave={saveGun} onClose={()=>setModal(null)} lists={lists}/>}
+      {modal==="addAmmo"     &&<AmmoForm onSave={saveAmmo} onClose={()=>setModal(null)} lists={lists}/>}
+      {modal==="editAmmo"    &&sel&&<AmmoForm initial={sel} onSave={saveAmmo} onClose={()=>setModal(null)} lists={lists}/>}
+      {modal==="addAcc"      &&<AccForm onSave={saveAcc} onClose={()=>setModal(null)} guns={guns} lists={lists}/>}
+      {modal==="editAcc"     &&sel&&<AccForm initial={sel} onSave={saveAcc} onClose={()=>setModal(null)} guns={guns} lists={lists}/>}
+      {modal==="addSession"  &&<RangeSessionForm onSave={saveSession} onClose={()=>setModal(null)} guns={guns} ammo={ammo}/>}
+      {modal==="addZero"     &&<ZeroForm onSave={saveZero} onClose={()=>setModal(null)} guns={guns} ammo={ammo}/>}
+      {modal==="addMaint"    &&<MaintenanceForm onSave={saveMaint} onClose={()=>setModal(null)} guns={guns}/>}
+      {modal==="addHunt"     &&<HuntForm onSave={saveHunt} onClose={()=>setModal(null)} guns={guns} ammo={ammo}/>}
+      {modal==="addLoad"     &&<LoadForm onSave={saveLoad} onClose={()=>setModal(null)} lists={lists}/>}
+      {modal==="editLoad"    &&sel&&<LoadForm initial={sel} onSave={saveLoad} onClose={()=>setModal(null)} lists={lists}/>}
+      {modal==="editHunt"    &&sel&&<HuntForm initial={sel} onSave={saveHunt} onClose={()=>setModal(null)} guns={guns} ammo={ammo}/>}
+
+      {modal==="detailAmmo"&&sel&&(
+        <Overlay onClose={()=>{setModal(null);setSel(null);}}>
+          <SheetHeader title="Ammunition" onBack={()=>{setModal(null);setSel(null);}} onDelete={del} onSave={()=>setModal("editAmmo")} saveLabel="Edit"/>
+          <div style={{padding:"20px 28px 28px"}}>
+            <div style={{fontSize:24,fontWeight:800,color:"#fff",marginBottom:6}}>{sel.manufacturer} {sel.caliber}</div>
+            <div style={{color:"#ff9f0a",fontSize:14,fontWeight:600,marginBottom:16}}>{sel.caliber}</div>
+            <div style={{background:"#2c2c2e",borderRadius:14,overflow:"hidden",marginBottom:14}}>
+              {sel.grains&&<DR label="Grain" value={`${sel.grains}gr`}/>}
+              {sel.ammoType&&<DR label="Type" value={sel.ammoType}/>}
+              {sel.quantity&&<DR label="Quantity" value={`${sel.quantity} rounds`}/>}
+              {sel.purchaseDate&&<DR label="Purchased" value={sel.purchaseDate}/>}
+              {sel.purchasePrice&&<DR label="Price Paid" value={fmtP(sel.purchasePrice)} last accent/>}
+            </div>
+            {sel.notes&&<div style={{background:"#2c2c2e",borderRadius:14,padding:"14px"}}><div style={{color:"#8e8e93",fontSize:11,fontWeight:600,textTransform:"uppercase",marginBottom:5}}>Notes</div><div style={{color:"#fff",fontSize:14}}>{sel.notes}</div></div>}
+          </div>
+        </Overlay>
+      )}
+
+      {modal==="detailAcc"&&sel&&(
+        <Overlay onClose={()=>{setModal(null);setSel(null);}}>
+          <SheetHeader title="Accessory" onBack={()=>{setModal(null);setSel(null);}} onDelete={del} onSave={()=>setModal("editAcc")} saveLabel="Edit"/>
+          <div style={{padding:"20px 28px 28px"}}>
+            <div style={{fontSize:24,fontWeight:800,color:"#fff",marginBottom:6}}>{sel.manufacturer} {sel.model||""}</div>
+            {sel.category&&<div style={{marginBottom:14}}><AccBadge category={sel.category}/></div>}
+            {(()=>{const g=guns.find(x=>x.id===sel.gunId);return(
+              <div onClick={g?()=>{setSel(g);setModal("gunProfile");}:undefined} style={{background:g?"#1e1e2e":"#2c2c2e",border:`1px solid ${g?"#bf5af244":"#3a3a3c"}`,borderRadius:14,padding:"14px",marginBottom:14,cursor:g?"pointer":"default",display:"flex",alignItems:"center",gap:10}}>
+                <div style={{color:g?"#bf5af2":"#48484a"}}>{g?<ILink/>:<IUnlink/>}</div>
+                <div style={{flex:1}}>
+                  <div style={{color:"#8e8e93",fontSize:11,fontWeight:600,textTransform:"uppercase",marginBottom:3}}>Assigned To</div>
+                  <div style={{color:g?"#fff":"#48484a",fontSize:14,fontWeight:g?600:400}}>{g?gLabel(g):"Unassigned"}</div>
+                </div>
+                {g&&<div style={{color:"#48484a"}}><IChev/></div>}
+              </div>
+            );})()}
+            <div style={{background:"#2c2c2e",borderRadius:14,overflow:"hidden",marginBottom:14}}>
+              {sel.serialNumber&&<DR label="Serial #" value={sel.serialNumber}/>}
+              {sel.purchaseDate&&<DR label="Purchased" value={sel.purchaseDate}/>}
+              {sel.purchasePrice&&<DR label="Price Paid" value={fmtP(sel.purchasePrice)} last accent/>}
+            </div>
+            {sel.notes&&<div style={{background:"#2c2c2e",borderRadius:14,padding:"14px"}}><div style={{color:"#8e8e93",fontSize:11,fontWeight:600,textTransform:"uppercase",marginBottom:5}}>Notes</div><div style={{color:"#fff",fontSize:14}}>{sel.notes}</div></div>}
+          </div>
+        </Overlay>
+      )}
+
+      {modal==="gunProfile"&&sel&&(
+        <GunProfile
+          gun={sel} accessories={acc} rangeSessions={rangeSessions} zeros={zeros} maintenance={maintenance} loads={loads} hunts={hunts} ammo={ammo} guns={guns} settings={settings} lists={lists}
+          onClose={()=>{setModal(null);setSel(null);}}
+          onEdit={()=>setModal("editGun")}
+          onDelete={del}
+          onAddAcc={()=>{setSel(prev=>({_fromGun:prev,_pg:prev.id,...prev}));setModal("addAcc");}}
+          onViewAcc={a=>{setSel(a);setModal("detailAcc");}}
+          onAddZero={()=>{const g=sel;setModal("addZero");setSel(g);}}
+          onAddSession={()=>{const g=sel;setModal("addSession");setSel(g);}}
+          onAddMaint={()=>{const g=sel;setModal("addMaint");setSel(g);}}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
