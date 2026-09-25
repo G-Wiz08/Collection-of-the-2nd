@@ -1220,15 +1220,82 @@ const NAV=[
 // ── Main App ──────────────────────────────────────────────────────────────────
 function App(){
   const [tab,setTab]=useState("firearms");
-  const [guns,setGuns]=useState(SAMPLE_GUNS);
-  const [ammo,setAmmo]=useState(SAMPLE_AMMO);
-  const [acc,setAcc]=useState(SAMPLE_ACC);
-  const [rangeSessions,setRangeSessions]=useState([]);
-  const [zeros,setZeros]=useState([]);
-  const [maintenance,setMaintenance]=useState([]);
-  const [loads,setLoads]=useState([]);
-  const [hunts,setHunts]=useState([]);
-  const [settings,setSettings]=useState(DEFAULT_SETTINGS);
+  const [dbReady, setDbReady] = useState(false);
+  const dbRef = useRef(null);
+
+  // Open IndexedDB once on mount
+  useEffect(() => {
+    const req = indexedDB.open("collection_of_the_2nd", 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      ["guns","ammo","acc","sessions","zeros","maintenance","loads","hunts","settings"].forEach(store => {
+        if (!db.objectStoreNames.contains(store)) db.createObjectStore(store, {keyPath:"_key"});
+      });
+    };
+    req.onsuccess = e => {
+      dbRef.current = e.target.result;
+      // Load all stores
+      const db = dbRef.current;
+      const stores = ["guns","ammo","acc","sessions","zeros","maintenance","loads","hunts","settings"];
+      const results = {};
+      let done = 0;
+      stores.forEach(store => {
+        const tx = db.transaction(store, "readonly");
+        const req2 = tx.objectStore(store).get("data");
+        req2.onsuccess = ev => {
+          results[store] = ev.target.result ? ev.target.result.value : null;
+          done++;
+          if (done === stores.length) {
+            if (results.guns)        setGunsRaw(results.guns);
+            if (results.ammo)        setAmmoRaw(results.ammo);
+            if (results.acc)         setAccRaw(results.acc);
+            if (results.sessions)    setRangeSessionsRaw(results.sessions);
+            if (results.zeros)       setZerosRaw(results.zeros);
+            if (results.maintenance) setMaintenanceRaw(results.maintenance);
+            if (results.loads)       setLoadsRaw(results.loads);
+            if (results.hunts)       setHuntsRaw(results.hunts);
+            if (results.settings)    setSettingsRaw(results.settings);
+            setDbReady(true);
+          }
+        };
+        req2.onerror = () => { done++; if(done===stores.length) setDbReady(true); };
+      });
+    };
+    req.onerror = () => setDbReady(true);
+  }, []);
+
+  function persist(store, value) {
+    if (!dbRef.current) return;
+    const tx = dbRef.current.transaction(store, "readwrite");
+    tx.objectStore(store).put({_key:"data", value});
+  }
+
+  const [guns,setGunsRaw]=useState(SAMPLE_GUNS);
+  const [ammo,setAmmoRaw]=useState(SAMPLE_AMMO);
+  const [acc,setAccRaw]=useState(SAMPLE_ACC);
+  const [rangeSessions,setRangeSessionsRaw]=useState([]);
+  const [zeros,setZerosRaw]=useState([]);
+  const [maintenance,setMaintenanceRaw]=useState([]);
+  const [loads,setLoadsRaw]=useState([]);
+  const [hunts,setHuntsRaw]=useState([]);
+  const [settings,setSettingsRaw]=useState(DEFAULT_SETTINGS);
+
+  function setGuns(v)         { const n=typeof v==="function"?v(guns):v;           persist("guns",n);        setGunsRaw(n); }
+  function setAmmo(v)         { const n=typeof v==="function"?v(ammo):v;           persist("ammo",n);        setAmmoRaw(n); }
+  function setAcc(v)          { const n=typeof v==="function"?v(acc):v;            persist("acc",n);         setAccRaw(n); }
+  function setRangeSessions(v){ const n=typeof v==="function"?v(rangeSessions):v;  persist("sessions",n);    setRangeSessionsRaw(n); }
+  function setZeros(v)        { const n=typeof v==="function"?v(zeros):v;          persist("zeros",n);       setZerosRaw(n); }
+  function setMaintenance(v)  { const n=typeof v==="function"?v(maintenance):v;    persist("maintenance",n); setMaintenanceRaw(n); }
+  function setLoads(v)        { const n=typeof v==="function"?v(loads):v;          persist("loads",n);       setLoadsRaw(n); }
+  function setHunts(v)        { const n=typeof v==="function"?v(hunts):v;          persist("hunts",n);       setHuntsRaw(n); }
+  function setSettings(v)     { const n=typeof v==="function"?v(settings):v;       persist("settings",n);    setSettingsRaw(n); }
+
+  if (!dbReady) return (
+    <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16}}>
+      <div style={{color:"#ff9f0a",fontSize:18,fontWeight:700}}>Collection of the 2nd</div>
+      <div style={{color:"#636366",fontSize:14}}>Loading your collection…</div>
+    </div>
+  );
   const [search,setSearch]=useState("");
   const [modal,setModal]=useState(null);
   const [sel,setSel]=useState(null);
