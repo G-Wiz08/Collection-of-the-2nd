@@ -1223,9 +1223,18 @@ function App(){
   const [dbReady, setDbReady] = useState(false);
   const dbRef = useRef(null);
 
-  // Open IndexedDB once on mount
+  const [guns,setGunsRaw]=useState([]);
+  const [ammo,setAmmoRaw]=useState([]);
+  const [acc,setAccRaw]=useState([]);
+  const [rangeSessions,setRangeSessionsRaw]=useState([]);
+  const [zeros,setZerosRaw]=useState([]);
+  const [maintenance,setMaintenanceRaw]=useState([]);
+  const [loads,setLoadsRaw]=useState([]);
+  const [hunts,setHuntsRaw]=useState([]);
+  const [settings,setSettingsRaw]=useState(DEFAULT_SETTINGS);
+
   useEffect(() => {
-    const req = indexedDB.open("collection_of_the_2nd", 1);
+    const req = indexedDB.open("collection_of_the_2nd", 2);
     req.onupgradeneeded = e => {
       const db = e.target.result;
       ["guns","ammo","acc","sessions","zeros","maintenance","loads","hunts","settings"].forEach(store => {
@@ -1234,51 +1243,59 @@ function App(){
     };
     req.onsuccess = e => {
       dbRef.current = e.target.result;
-      // Load all stores
       const db = dbRef.current;
-      const stores = ["guns","ammo","acc","sessions","zeros","maintenance","loads","hunts","settings"];
-      const results = {};
-      let done = 0;
-      stores.forEach(store => {
-        const tx = db.transaction(store, "readonly");
-        const req2 = tx.objectStore(store).get("data");
-        req2.onsuccess = ev => {
-          results[store] = ev.target.result ? ev.target.result.value : null;
-          done++;
-          if (done === stores.length) {
-            if (results.guns)        setGunsRaw(results.guns);
-            if (results.ammo)        setAmmoRaw(results.ammo);
-            if (results.acc)         setAccRaw(results.acc);
-            if (results.sessions)    setRangeSessionsRaw(results.sessions);
-            if (results.zeros)       setZerosRaw(results.zeros);
-            if (results.maintenance) setMaintenanceRaw(results.maintenance);
-            if (results.loads)       setLoadsRaw(results.loads);
-            if (results.hunts)       setHuntsRaw(results.hunts);
-            if (results.settings)    setSettingsRaw(results.settings);
-            setDbReady(true);
+      const storeMap = [
+        ["guns",        setGunsRaw,          SAMPLE_GUNS],
+        ["ammo",        setAmmoRaw,          SAMPLE_AMMO],
+        ["acc",         setAccRaw,           SAMPLE_ACC],
+        ["sessions",    setRangeSessionsRaw, []],
+        ["zeros",       setZerosRaw,         []],
+        ["maintenance", setMaintenanceRaw,   []],
+        ["loads",       setLoadsRaw,         []],
+        ["hunts",       setHuntsRaw,         []],
+        ["settings",    setSettingsRaw,      DEFAULT_SETTINGS],
+      ];
+      let remaining = storeMap.length;
+      storeMap.forEach(([store, setter, fallback]) => {
+        const tx = db.transaction(store, "readwrite");
+        const os = tx.objectStore(store);
+        const getReq = os.get("data");
+        getReq.onsuccess = ev => {
+          const saved = ev.target.result;
+          if (saved && saved.value !== undefined) {
+            // Found saved data — use it
+            setter(saved.value);
+          } else {
+            // Nothing saved yet — write sample/default data so it persists
+            os.put({_key:"data", value: fallback});
+            setter(fallback);
           }
+          remaining--;
+          if (remaining === 0) setDbReady(true);
         };
-        req2.onerror = () => { done++; if(done===stores.length) setDbReady(true); };
+        getReq.onerror = () => {
+          setter(fallback);
+          remaining--;
+          if (remaining === 0) setDbReady(true);
+        };
       });
     };
-    req.onerror = () => setDbReady(true);
+    req.onerror = () => {
+      // IndexedDB failed — just run with defaults in memory
+      setGunsRaw(SAMPLE_GUNS);
+      setAmmoRaw(SAMPLE_AMMO);
+      setAccRaw(SAMPLE_ACC);
+      setDbReady(true);
+    };
   }, []);
 
   function persist(store, value) {
     if (!dbRef.current) return;
-    const tx = dbRef.current.transaction(store, "readwrite");
-    tx.objectStore(store).put({_key:"data", value});
+    try {
+      const tx = dbRef.current.transaction(store, "readwrite");
+      tx.objectStore(store).put({_key:"data", value});
+    } catch(e) { console.warn("persist failed", store, e); }
   }
-
-  const [guns,setGunsRaw]=useState(SAMPLE_GUNS);
-  const [ammo,setAmmoRaw]=useState(SAMPLE_AMMO);
-  const [acc,setAccRaw]=useState(SAMPLE_ACC);
-  const [rangeSessions,setRangeSessionsRaw]=useState([]);
-  const [zeros,setZerosRaw]=useState([]);
-  const [maintenance,setMaintenanceRaw]=useState([]);
-  const [loads,setLoadsRaw]=useState([]);
-  const [hunts,setHuntsRaw]=useState([]);
-  const [settings,setSettingsRaw]=useState(DEFAULT_SETTINGS);
 
   function setGuns(v)         { const n=typeof v==="function"?v(guns):v;           persist("guns",n);        setGunsRaw(n); }
   function setAmmo(v)         { const n=typeof v==="function"?v(ammo):v;           persist("ammo",n);        setAmmoRaw(n); }
